@@ -25,4 +25,8 @@ EXPOSE 8000
 # 1) прогнать миграции Alembic
 # 2) запустить uvicorn
 CMD alembic upgrade head && \
+<<<<<<< HEAD
     uvicorn main:app --host 0.0.0.0 --port 8000
+=======
+    uvicorn main:app --host 0.0.0.0 --port 8000
+>>>>>>> 4077ef73a642438935e6af76ec086a5aa7436986

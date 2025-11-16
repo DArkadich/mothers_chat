@@ -30,7 +30,11 @@ services:
       FRONTEND_ORIGIN: https://miniapp.example.com
       DEFAULT_DAILY_REQUESTS: "30"
       DEFAULT_MONTHLY_REQUESTS: "200"
+<<<<<<< HEAD
       DEFAULT_MODEL: gpt-4.1-mini
+=======
+      DEFAULT_MODEL: gpt-4o-mini
+>>>>>>> 4077ef73a642438935e6af76ec086a5aa7436986
       LOG_LEVEL: INFO
       RATE_LIMIT_PER_MINUTE: "120"
     ports:
