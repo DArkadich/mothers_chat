@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Мамины ИИ-ассистенты</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Telegram Web App JS -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <h1>Мамины ИИ-ассистенты</h1>
+      <div id="user-info"></div>
+    </header>
+
+    <main class="app-main">
+      <section class="assistants-panel">
+        <h2>Мои ассистенты</h2>
+        <div id="assistants-list" class="assistants-list"></div>
+        <div id="limits" class="limits"></div>
+      </section>
+
+      <section class="chat-panel">
+        <h2 id="chat-title">Чат</h2>
+        <div id="chat-window" class="chat-window"></div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" placeholder="Напишите вопрос ассистенту..." rows="2"></textarea>
+          <button type="submit">Отправить</button>
+        </form>
+      </section>
+    </main>
+
+    <div id="status-bar" class="status-bar"></div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
