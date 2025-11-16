@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: motherschat_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: motherschat
+      POSTGRES_PASSWORD: motherschat_password
+      POSTGRES_DB: motherschat
+    ports:
+      - "5432:5432"
+    volumes:
+      - motherschat_db_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: motherschat_backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      # строка подключения к БД — её увидит и main.py, и Alembic
+      DATABASE_URL: postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat
+
+      TELEGRAM_BOT_TOKEN: 1234567890:ABCDEF_YOUR_BOT_TOKEN_HERE
+      OPENAI_API_KEY: sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+      FRONTEND_ORIGIN: https://miniapp.example.com
+      DEFAULT_DAILY_REQUESTS: "30"
+      DEFAULT_MONTHLY_REQUESTS: "200"
+      DEFAULT_MODEL: gpt-4o-mini
+      LOG_LEVEL: INFO
+      RATE_LIMIT_PER_MINUTE: "120"
+    ports:
+      - "8000:8000"
+    # Если хочешь авто-перезапуск при изменении кода локально — потом добавим volumes
+
+volumes:
+  motherschat_db_data:
