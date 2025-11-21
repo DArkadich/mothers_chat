@@ -695,6 +695,14 @@ function applyAndroidFixesIfNeeded() {
   }
 }
 
+function initTelegram() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+  }
+}
+
 function initApp() {
   applyAndroidFixesIfNeeded();
   initTelegram();
@@ -704,4 +712,3 @@ function initApp() {
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
-

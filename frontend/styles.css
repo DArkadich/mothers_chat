@@ -601,23 +601,20 @@
       padding-bottom: 80px;
     }
   }
-  /* ===== ANDROID-FIXES ===== */
+/* ===== ANDROID-FIXES ===== */
 
 body.is-android #app {
-  height: auto;          /* вместо жёсткого 100vh */
-  min-height: 100vh;     /* чтобы всё равно растягиваться на высоту экрана */
+  height: auto;
+  min-height: 100vh;
 }
 
 body.is-android .app-main {
-  overflow: visible;     /* не режем внутренний скролл */
+  overflow: visible;
 }
 
 body.is-android .screen {
-  overflow: visible;     /* даём странице скроллиться целиком */
+  overflow: visible;
 }
-
-/* На Android position: fixed в WebView Телеги часто глючит.
-   Сделаем навигацию и статус-бар обычной частью потока. */
 
 body.is-android .bottom-nav {
   position: static;
