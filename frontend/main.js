@@ -689,7 +689,14 @@ function initTelegram() {
 
 // ==== Инициализация приложения ====
 
+function applyAndroidFixesIfNeeded() {
+  if (/Android/i.test(navigator.userAgent)) {
+    document.body.classList.add("is-android");
+  }
+}
+
 function initApp() {
+  applyAndroidFixesIfNeeded();
   initTelegram();
   renderSegments();
   showScreen("assistants");
@@ -697,3 +704,4 @@ function initApp() {
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
+
