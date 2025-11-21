@@ -2,10 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Мамины ИИ-ассистенты (MVP прототип)</title>
+  <title>mamino.online — Мамины ИИ-ассистенты</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Telegram Web App JS (в демо просто не будет использоваться, если открыто не в ТГ) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <link rel="stylesheet" href="styles.css">
@@ -13,49 +12,247 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <div class="app-title-block">
-        <h1>Мамины ИИ-ассистенты</h1>
-        <div class="app-subtitle">Мягкая поддержка для беременности и первого года жизни малыша</div>
+      <div class="app-header-main">
+        <div class="app-logo-circle">m</div>
+        <div class="app-title-block">
+          <h1>mamino.online</h1>
+          <div class="app-subtitle">Мягкие ИИ-ассистенты для мам: от беременности до подростков</div>
+        </div>
       </div>
-      <div id="user-info"></div>
+      <div id="user-info" class="user-info">
+        <div class="user-name">Мама, это демо-режим</div>
+        <div class="user-label">В мини-приложении Telegram здесь будет ваше имя</div>
+      </div>
     </header>
 
     <main class="app-main">
-      <section class="assistants-panel">
-        <h2>Ваши помощники</h2>
+      <!-- Экран ассистентов (главный) -->
+      <section class="screen screen-active" data-screen="assistants">
+        <div class="screen-inner">
+          <!-- Приветствие -->
+          <section class="hero">
+            <div class="hero-text">
+              <div class="hero-suptitle">Привет, я твоя нейро-поддержка</div>
+              <h2 class="hero-title">Помогаю мамам в самые непростые моменты</h2>
+              <p class="hero-desc">
+                Выбери, что болит прямо сейчас: сон, питание, тревоги, отношения или школа — и получи понятный план действий.
+              </p>
+            </div>
+            <div class="hero-badge">
+              <span class="hero-badge-main">Без осуждения</span>
+              <span class="hero-badge-sub">Только поддержка и конкретные шаги</span>
+            </div>
+          </section>
 
-        <div id="onboarding-hint" class="onboarding-hint">
-          <div class="onboarding-title">С чего начнём?</div>
-          <div class="onboarding-text">
-            Выберите, что сейчас актуальнее всего: подготовка к родам, тревоги, режим дня или общения с близкими.
-          </div>
-        </div>
+          <!-- Быстрые запросы -->
+          <section class="quick-issues">
+            <h3 class="section-title">Сегодня мам чаще всего волнует</h3>
+            <div class="quick-list">
+              <button class="quick-chip" data-quick="sleep_baby">
+                😴 Сон младенца
+              </button>
+              <button class="quick-chip" data-quick="breastfeeding">
+                🍼 Грудное вскармливание
+              </button>
+              <button class="quick-chip" data-quick="stool_colic">
+                🤍 Стул, животик и колики
+              </button>
+              <button class="quick-chip" data-quick="postpartum">
+                🌸 Восстановление мамы после родов
+              </button>
+            </div>
+            <button id="find-solution-btn" class="primary-cta">
+              Найти решение под мою ситуацию
+            </button>
+            <div class="cta-note">
+              Небольшой квиз на 3 вопроса — и мы подберём ассистента и готовые инструкции именно под ваш этап.
+            </div>
+          </section>
 
-        <div id="assistants-list" class="assistants-list"></div>
-
-        <div class="limits">
-          <div class="limits-title">Сегодня вы можете задать до 30 вопросов.</div>
-          <div class="limits-note">В демо-версии ограничений нет, это просто пример.</div>
+          <!-- Каталог ассистентов по сегментам -->
+          <section class="catalog">
+            <h3 class="section-title">Ассистенты по этапам и ситуациям</h3>
+            <div id="segments-container" class="segments-container">
+              <!-- JS вставит сегменты с ассистентами -->
+            </div>
+          </section>
         </div>
       </section>
 
-      <section class="chat-panel">
-        <h2 id="chat-title">Чат с ассистентом</h2>
-        <div id="chat-window" class="chat-window">
-          <div class="chat-message assistant">
-            Привет! Я ИИ-ассистент для будущих мам. Выберите помощника слева и напишите, что вас волнует больше всего.
+      <!-- Экран избранного -->
+      <section class="screen" data-screen="favorites">
+        <div class="screen-inner">
+          <h2 class="screen-title">Избранное</h2>
+          <p class="screen-desc">
+            Здесь будут сохранённые вами инструкции, планы действий и ответы нейро-ассистентов, к которым вы хотите вернуться позже.
+          </p>
+          <div id="favorites-empty" class="empty-state">
+            <div class="empty-icon">⭐</div>
+            <div class="empty-title">Пока здесь пусто</div>
+            <div class="empty-text">
+              После запуска ИИ-ассистентов вы сможете сохранять важные ответы в избранное и быстро находить их в любом хаосе.
+            </div>
+          </div>
+          <div id="favorites-list" class="favorites-list hidden">
+            <!-- Здесь появятся избранные элементы -->
           </div>
         </div>
-        <form id="chat-form" class="chat-form">
-          <textarea
-            id="chat-input"
-            placeholder="Напишите свой вопрос… Например: «Я на 32 неделе, не могу уснуть из-за тревог»"
-            rows="2"
-          ></textarea>
-          <button type="submit">Отправить</button>
-        </form>
+      </section>
+
+      <!-- Экран профиля -->
+      <section class="screen" data-screen="profile">
+        <div class="screen-inner">
+          <h2 class="screen-title">Профиль мамы</h2>
+          <div class="profile-card">
+            <div class="profile-avatar">М</div>
+            <div class="profile-main">
+              <div class="profile-name">Мама (демо-профиль)</div>
+              <div class="profile-note">
+                В версии внутри Telegram здесь будет ваш телеграм-профиль, возраст ребёнка и этап: беременность, малыши или школа.
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h3 class="profile-section-title">Мои данные</h3>
+            <div class="profile-menu">
+              <button class="profile-item">
+                <span>Мои ассистенты</span>
+                <span class="profile-item-tag">скоро</span>
+              </button>
+              <button class="profile-item">
+                <span>Мои квизы и результаты</span>
+                <span class="profile-item-tag">скоро</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h3 class="profile-section-title">Оплата и доступы</h3>
+            <div class="profile-menu">
+              <button class="profile-item">
+                <span>Способы оплаты</span>
+                <span class="profile-item-tag">позже</span>
+              </button>
+              <button class="profile-item">
+                <span>Мои заказы</span>
+                <span class="profile-item-tag">позже</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h3 class="profile-section-title">Документы</h3>
+            <div class="profile-menu">
+              <button class="profile-item">
+                <span>Пользовательское соглашение (оферта)</span>
+              </button>
+              <button class="profile-item">
+                <span>Политика конфиденциальности</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Экран квиза -->
+      <section class="screen" data-screen="quiz">
+        <div class="screen-inner">
+          <button id="quiz-back-btn" class="back-btn">← Назад</button>
+          <h2 class="screen-title">Подбор решения под вашу ситуацию</h2>
+          <p class="screen-desc">
+            Ответьте на несколько вопросов — мы предложим ассистента и формат помощи, который будет максимально полезен именно вам.
+          </p>
+
+          <form id="quiz-form" class="quiz-form">
+            <div class="quiz-question">
+              <label class="quiz-label">1. На каком вы сейчас этапе?</label>
+              <div class="quiz-options">
+                <label><input type="radio" name="stage" value="pregnant" checked> Беременность</label>
+                <label><input type="radio" name="stage" value="baby_0_1"> Малыш 0–1 год</label>
+                <label><input type="radio" name="stage" value="baby_1_3"> Малыш 1–3 года</label>
+                <label><input type="radio" name="stage" value="child_3_7"> Ребёнок 3–7 лет</label>
+                <label><input type="radio" name="stage" value="school_7_10"> Школьник 7–10 лет</label>
+                <label><input type="radio" name="stage" value="school_11_14"> Школьник 11–14 лет</label>
+                <label><input type="radio" name="stage" value="multikids"> Несколько детей</label>
+                <label><input type="radio" name="stage" value="solo_mom"> Я соло-мама</label>
+              </div>
+            </div>
+
+            <div class="quiz-question">
+              <label class="quiz-label">2. Что сейчас болит больше всего?</label>
+              <select name="main_issue" class="quiz-select">
+                <option value="sleep">Сон ребёнка</option>
+                <option value="feeding">Питание / ГВ / прикорм</option>
+                <option value="behavior">Поведение / истерики / границы</option>
+                <option value="colic">Животик, стул, колики</option>
+                <option value="mom_recovery">Состояние мамы (тревоги, усталость, восстановление)</option>
+                <option value="relations">Отношения с партнёром / роднёй</option>
+                <option value="school">Школа / сад / уроки</option>
+                <option value="money_time">Время, рутина, деньги</option>
+              </select>
+            </div>
+
+            <div class="quiz-question">
+              <label class="quiz-label">3. Насколько ситуация для вас напряжённая?</label>
+              <div class="quiz-options">
+                <label><input type="radio" name="severity" value="calm" checked> Скорее спокойно, хочу сделать лучше</label>
+                <label><input type="radio" name="severity" value="medium"> Уже тяжеловато, нужны понятные шаги</label>
+                <label><input type="radio" name="severity" value="hard"> Очень тяжело, я на пределе</label>
+              </div>
+            </div>
+
+            <button type="submit" class="primary-cta">
+              Получить план и ассистента
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Экран результата квиза -->
+      <section class="screen" data-screen="result">
+        <div class="screen-inner">
+          <button id="result-back-btn" class="back-btn">← Назад к ассистентам</button>
+          <h2 class="screen-title">Ваш персональный подбор</h2>
+          <p class="screen-desc">
+            На основе ваших ответов мы предлагаем начать с этого ассистента и формата помощи.
+          </p>
+
+          <div id="result-card" class="result-card">
+            <!-- JS вставит сюда данные ассистента -->
+          </div>
+
+          <div class="result-actions">
+            <button id="result-connect-btn" class="primary-cta">
+              Подключить ассистента (демо)
+            </button>
+            <button id="result-favorite-btn" class="secondary-cta">
+              Сохранить в избранное
+            </button>
+          </div>
+
+          <div class="result-note">
+            В рабочей версии здесь будет оплата внутри Telegram и мгновенный доступ к нужному ассистенту на постоянной основе.
+          </div>
+        </div>
       </section>
     </main>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-item nav-item-active" data-target="assistants">
+        <div class="nav-icon">👶</div>
+        <div class="nav-label">Ассистенты</div>
+      </button>
+      <button class="nav-item" data-target="favorites">
+        <div class="nav-icon">⭐</div>
+        <div class="nav-label">Избранное</div>
+      </button>
+      <button class="nav-item" data-target="profile">
+        <div class="nav-icon">👩</div>
+        <div class="nav-label">Профиль</div>
+      </button>
+    </nav>
 
     <div id="status-bar" class="status-bar"></div>
   </div>
