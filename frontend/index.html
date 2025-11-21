@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Мамины ИИ-ассистенты</title>
+  <title>Мамины ИИ-ассистенты (MVP прототип)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Telegram Web App JS -->
+  <!-- Telegram Web App JS (в демо просто не будет использоваться, если открыто не в ТГ) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <link rel="stylesheet" href="styles.css">
@@ -13,22 +13,45 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <h1>Мамины ИИ-ассистенты</h1>
+      <div class="app-title-block">
+        <h1>Мамины ИИ-ассистенты</h1>
+        <div class="app-subtitle">Мягкая поддержка для беременности и первого года жизни малыша</div>
+      </div>
       <div id="user-info"></div>
     </header>
 
     <main class="app-main">
       <section class="assistants-panel">
-        <h2>Мои ассистенты</h2>
+        <h2>Ваши помощники</h2>
+
+        <div id="onboarding-hint" class="onboarding-hint">
+          <div class="onboarding-title">С чего начнём?</div>
+          <div class="onboarding-text">
+            Выберите, что сейчас актуальнее всего: подготовка к родам, тревоги, режим дня или общения с близкими.
+          </div>
+        </div>
+
         <div id="assistants-list" class="assistants-list"></div>
-        <div id="limits" class="limits"></div>
+
+        <div class="limits">
+          <div class="limits-title">Сегодня вы можете задать до 30 вопросов.</div>
+          <div class="limits-note">В демо-версии ограничений нет, это просто пример.</div>
+        </div>
       </section>
 
       <section class="chat-panel">
-        <h2 id="chat-title">Чат</h2>
-        <div id="chat-window" class="chat-window"></div>
+        <h2 id="chat-title">Чат с ассистентом</h2>
+        <div id="chat-window" class="chat-window">
+          <div class="chat-message assistant">
+            Привет! Я ИИ-ассистент для будущих мам. Выберите помощника слева и напишите, что вас волнует больше всего.
+          </div>
+        </div>
         <form id="chat-form" class="chat-form">
-          <textarea id="chat-input" placeholder="Напишите вопрос ассистенту..." rows="2"></textarea>
+          <textarea
+            id="chat-input"
+            placeholder="Напишите свой вопрос… Например: «Я на 32 неделе, не могу уснуть из-за тревог»"
+            rows="2"
+          ></textarea>
           <button type="submit">Отправить</button>
         </form>
       </section>

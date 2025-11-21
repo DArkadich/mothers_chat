@@ -5,7 +5,7 @@
   body {
     margin: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f5f5f7;
+    background: #f7f6fb;
     color: #222;
   }
   
@@ -15,24 +15,35 @@
     height: 100vh;
   }
   
+  /* Шапка */
+  
   .app-header {
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
   
-  .app-header h1 {
+  .app-title-block h1 {
     font-size: 18px;
     margin: 0;
+  }
+  
+  .app-subtitle {
+    font-size: 12px;
+    color: #777;
+    margin-top: 2px;
   }
   
   #user-info {
     font-size: 12px;
     color: #666;
+    text-align: right;
   }
+  
+  /* Основная область */
   
   .app-main {
     display: flex;
@@ -40,14 +51,15 @@
     overflow: hidden;
   }
   
-  /* Левая панель – ассистенты */
+  /* Левая колонка: ассистенты */
+  
   .assistants-panel {
     width: 35%;
-    max-width: 320px;
+    max-width: 340px;
     min-width: 220px;
-    border-right: 1px solid #e0e0e0;
-    padding: 8px;
-    background: #fafafa;
+    border-right: 1px solid #e0e0f0;
+    padding: 10px;
+    background: #faf9ff;
     display: flex;
     flex-direction: column;
   }
@@ -57,71 +69,106 @@
     margin: 0 0 8px;
   }
   
-  .assistants-list {
-    flex: 1;
-    overflow-y: auto;
-  }
-  
-  .assistant-item {
-    border-radius: 8px;
+  .onboarding-hint {
+    background: #fff7e6;
+    border: 1px solid #ffe0a3;
+    border-radius: 10px;
     padding: 8px;
-    margin-bottom: 6px;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    cursor: pointer;
+    margin-bottom: 8px;
   }
   
-  .assistant-item.disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  
-  .assistant-item.active {
-    border-color: #4a8cff;
-    box-shadow: 0 0 0 1px #4a8cff33;
-  }
-  
-  .assistant-title {
-    font-size: 14px;
+  .onboarding-title {
+    font-size: 13px;
     font-weight: 600;
     margin-bottom: 4px;
   }
   
-  .assistant-description {
-    font-size: 12px;
-    color: #666;
-  }
-  
-  .assistant-badge {
-    font-size: 10px;
-    display: inline-block;
-    margin-top: 4px;
-    padding: 2px 4px;
-    border-radius: 4px;
-  }
-  
-  .assistant-badge.access {
-    background: #e8f5e9;
-    color: #2e7d32;
-  }
-  
-  .assistant-badge.no-access {
-    background: #ffebee;
-    color: #c62828;
-  }
-  
-  .limits {
-    margin-top: 8px;
+  .onboarding-text {
     font-size: 12px;
     color: #555;
   }
   
-  /* Правая панель – чат */
+  .assistants-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 6px;
+    margin-bottom: 8px;
+  }
+  
+  .assistant-item {
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 6px;
+    background: #ffffff;
+    border: 1px solid #e0e0f0;
+    cursor: pointer;
+    transition: box-shadow 0.1s ease, border-color 0.1s ease, transform 0.05s ease;
+  }
+  
+  .assistant-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+  }
+  
+  .assistant-item.active {
+    border-color: #6f7ff7;
+    box-shadow: 0 0 0 1px #6f7ff733;
+  }
+  
+  .assistant-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .assistant-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  
+  .assistant-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3949ab;
+  }
+  
+  .assistant-description {
+    font-size: 12px;
+    color: #555;
+    margin-top: 2px;
+  }
+  
+  .assistant-note {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+  }
+  
+  .limits {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  .limits-title {
+    font-weight: 500;
+  }
+  
+  .limits-note {
+    font-size: 10px;
+    color: #999;
+  }
+  
+  /* Правая колонка: чат */
+  
   .chat-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 8px;
+    padding: 10px;
   }
   
   .chat-panel h2 {
@@ -132,8 +179,8 @@
   .chat-window {
     flex: 1;
     background: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    border: 1px solid #e0e0f0;
     padding: 8px;
     overflow-y: auto;
     display: flex;
@@ -142,9 +189,9 @@
   }
   
   .chat-message {
-    max-width: 80%;
-    padding: 6px 8px;
-    border-radius: 8px;
+    max-width: 82%;
+    padding: 6px 9px;
+    border-radius: 10px;
     font-size: 13px;
     line-height: 1.4;
     white-space: pre-wrap;
@@ -171,18 +218,20 @@
     resize: none;
     padding: 6px 8px;
     font-size: 13px;
-    border-radius: 8px;
-    border: 1px solid #cccccc;
+    border-radius: 10px;
+    border: 1px solid #ccccdd;
+    font-family: inherit;
   }
   
   .chat-form button {
     padding: 0 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
-    background: #4a8cff;
+    background: #6f7ff7;
     color: #fff;
     font-size: 13px;
     cursor: pointer;
+    white-space: nowrap;
   }
   
   .chat-form button:disabled {
@@ -190,16 +239,19 @@
     cursor: default;
   }
   
+  /* Статус-бар */
+  
   .status-bar {
-    min-height: 20px;
+    min-height: 22px;
     font-size: 11px;
     padding: 4px 8px;
     color: #555;
-    background: #f9f9f9;
-    border-top: 1px solid #e0e0e0;
+    background: #f3f2fb;
+    border-top: 1px solid #e0e0f0;
   }
   
   /* Мобильная адаптация */
+  
   @media (max-width: 768px) {
     .app-main {
       flex-direction: column;
@@ -209,11 +261,15 @@
       width: 100%;
       max-width: none;
       border-right: none;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0f0;
     }
   
     .chat-panel {
       flex: 1;
+    }
+  
+    .chat-message {
+      max-width: 90%;
     }
   }
   
