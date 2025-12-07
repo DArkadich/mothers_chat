@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>MAMIN — ассистенты для мам</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="/app/styles.css?v=1">
+  <script src="/app/main.js?v=1" defer></script>
+</head>
+<body>
+  <div class="mc-root">
+    <!-- Основной фон -->
+    <div class="mc-bg"></div>
+
+    <!-- Контентное поле (стекло) -->
+    <div class="mc-shell">
+      <!-- Верхняя панель: заголовок экрана -->
+      <header class="mc-topbar">
+        <div class="mc-topbar-brand">
+          <div class="mc-topbar-logo">
+            <img src="/app/logo-mamino.png" alt="Mamino" class="mc-topbar-logo-img">
+          </div>
+          <div class="mc-topbar-text">
+            <div class="mc-topbar-title" id="mc-topbar-title">MAMINO</div>
+            <div class="mc-topbar-subtitle" id="mc-topbar-subtitle">
+              помощь маме, которая всегда под рукой
+            </div>
+          </div>
+        </div>
+      </header>
+      
+
+      <!-- Экраны -->
+      <main class="mc-main">
+        <!-- 1. Главная: "Что беспокоит прямо сейчас?" -->
+        <section class="mc-screen mc-screen--active" data-screen="home">
+          <div class="mc-card mc-card--glass mc-card--hero">
+            <div class="mc-hero-logo">
+              <div class="mc-hero-logo-text">MAMIN</div>
+              <div class="mc-hero-logo-sub">помощь маме, которая<br>всегда под рукой</div>
+            </div>
+            <div class="mc-hero-text-block">
+              <p class="mc-hero-text">
+                Мы собрали лучших AI-ассистентов для мам: от беременности до подростков.
+              </p>
+              <p class="mc-hero-text">
+                Они помогают, подсказывают, успокаивают и делают твою рутину легче.
+              </p>
+            </div>
+          </div>
+
+          <div class="mc-block-title">
+            ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?
+          </div>
+
+          <div class="mc-quick-grid">
+            <button class="mc-quick-btn" data-action="open-assistant" data-assistant="sleep_0_1">
+              сон младенца
+            </button>
+            <button class="mc-quick-btn" data-action="open-assistant" data-assistant="colic">
+              колики
+            </button>
+            <button class="mc-quick-btn" data-action="open-segment" data-segment="1-3">
+              кризис 3х лет
+            </button>
+            <button class="mc-quick-btn" data-action="go-assistants">
+              хочу поговорить
+            </button>
+          </div>
+        </section>
+
+        <!-- 2. Экран выбора сегмента (ассистенты — корень) -->
+        <section class="mc-screen" data-screen="segments">
+          <div class="mc-section-heading">
+            <div class="mc-section-title">Ассистенты Mamino</div>
+            <div class="mc-section-subtitle">
+              выберите тему или пройдите подбор
+            </div>
+          </div>
+
+          <div class="mc-list">
+            <button class="mc-list-item" data-action="open-segment" data-segment="pregnant">
+              <div class="mc-list-main">Беременным</div>
+              <div class="mc-list-sub">Поддержка от теста до родов</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="0-1">
+              <div class="mc-list-main">Малыши 0–1 год</div>
+              <div class="mc-list-sub">Сон, грудь, животик и мама после родов</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="1-3">
+              <div class="mc-list-main">Малыши 1–3 года</div>
+              <div class="mc-list-sub">Прикорм, горшок, привычки и кризис трёх лет</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="3-7">
+              <div class="mc-list-main">Дети 3–7 лет (сад)</div>
+              <div class="mc-list-sub">Речь, игры, концентрация и адаптация</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="7-10">
+              <div class="mc-list-main">Школьники 7–10 лет</div>
+              <div class="mc-list-sub">Домашка, режим и отношения</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="11-14">
+              <div class="mc-list-main">Школьники 11–14 лет</div>
+              <div class="mc-list-sub">Подростки, гаджеты, эмоции и будущее</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="multi">
+              <div class="mc-list-main">Многодетным</div>
+              <div class="mc-list-sub">Расписание, рутина, ресурсы и деньги</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="solo">
+              <div class="mc-list-main">Соло-мамам</div>
+              <div class="mc-list-sub">Опора, отношения и финансовая грамотность</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+
+            <button class="mc-list-item" data-action="open-segment" data-segment="dream">
+              <div class="mc-list-main">Карта желаний мамы</div>
+              <div class="mc-list-sub">Мечты, планы и свои желания</div>
+              <div class="mc-list-icon">+</div>
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. Сегмент "Малыши 0–1" — тарифы Basic / Smart / Pro -->
+        <section class="mc-screen" data-screen="segment-0-1">
+          <div class="mc-section-heading">
+            <div class="mc-section-title">Малыши 0–1 год</div>
+            <div class="mc-section-subtitle">
+              Сон, грудь, животик и мама после родов
+            </div>
+          </div>
+
+          <div class="mc-pack">
+            <div class="mc-pack-header">
+              <div class="mc-pack-name">Basic</div>
+              <div class="mc-pack-badge">+1 подарок</div>
+            </div>
+            <ul class="mc-pack-list">
+              <li>Ассистент сна младенца</li>
+              <li>Ассистент грудного вскармливания</li>
+              <li>Ассистент стула и питания</li>
+            </ul>
+            <div class="mc-pack-actions">
+              <button class="mc-btn mc-btn--ghost" data-action="open-pack-details" data-pack="basic-0-1">
+                Подробнее
+              </button>
+              <button class="mc-btn mc-btn--primary" data-action="buy-pack" data-pack="basic-0-1">
+                Купить
+              </button>
+            </div>
+          </div>
+
+          <div class="mc-pack mc-pack--accent">
+            <div class="mc-pack-header">
+              <div class="mc-pack-name">Smart</div>
+              <div class="mc-pack-badge">+2 подарка</div>
+            </div>
+            <ul class="mc-pack-list">
+              <li>BASIC +</li>
+              <li>Ассистент ухода за мамой после родов</li>
+              <li>«Почему мой ребёнок плачет и как его успокоить»</li>
+            </ul>
+            <div class="mc-pack-actions">
+              <button class="mc-btn mc-btn--ghost" data-action="open-pack-details" data-pack="smart-0-1">
+                Подробнее
+              </button>
+              <button class="mc-btn mc-btn--primary" data-action="buy-pack" data-pack="smart-0-1">
+                Купить
+              </button>
+            </div>
+          </div>
+
+          <div class="mc-pack">
+            <div class="mc-pack-header">
+              <div class="mc-pack-name">Pro</div>
+              <div class="mc-pack-badge">+3 подарка</div>
+            </div>
+            <ul class="mc-pack-list">
+              <li>BASIC + SMART</li>
+              <li>Система высаживания от коликов</li>
+            </ul>
+            <div class="mc-pack-actions">
+              <button class="mc-btn mc-btn--ghost" data-action="open-pack-details" data-pack="pro-0-1">
+                Подробнее
+              </button>
+              <button class="mc-btn mc-btn--primary" data-action="buy-pack" data-pack="pro-0-1">
+                Купить
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Карточка ассистента (универсальный экран, контент из JS) -->
+        <section class="mc-screen" data-screen="assistant">
+          <div class="mc-section-heading">
+            <div class="mc-section-title" id="mc-assistant-segment-title">
+              Малыши 0–1 год
+            </div>
+            <div class="mc-section-subtitle" id="mc-assistant-segment-subtitle">
+              Сон, грудь, животик и мама после родов
+            </div>
+          </div>
+
+          <div class="mc-assistant-card">
+            <div class="mc-assistant-header">
+              <div class="mc-assistant-brand">MAMIN</div>
+              <div class="mc-assistant-tariff" id="mc-assistant-tariff"></div>
+            </div>
+
+            <div class="mc-assistant-title" id="mc-assistant-title">
+              АССИСТЕНТ «Наши первые дни вместе»
+            </div>
+
+            <div class="mc-assistant-body">
+              <p id="mc-assistant-lead" class="mc-assistant-lead"></p>
+
+              <div class="mc-assistant-block">
+                <div class="mc-assistant-block-title">Что делает:</div>
+                <ul id="mc-assistant-does" class="mc-assistant-list"></ul>
+              </div>
+
+              <div class="mc-assistant-block">
+                <div class="mc-assistant-block-title">Что ты получаешь:</div>
+                <ul id="mc-assistant-gets" class="mc-assistant-list"></ul>
+              </div>
+            </div>
+
+            <div class="mc-assistant-footer">
+              <button class="mc-btn mc-btn--ghost" data-action="back-to-packs">Назад к набору</button>
+              <button class="mc-btn mc-btn--primary" data-action="buy-current-assistant">
+                Подключить ассистента
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Пустые экраны-вкладыши для "избранное", dream room, профиль (чисто визуально) -->
+        <section class="mc-screen" data-screen="favorites">
+          <div class="mc-section-heading">
+            <div class="mc-section-title">Избранное</div>
+            <div class="mc-section-subtitle">
+              Здесь будут сохранённые планы, диалоги и подборки ассистентов.
+            </div>
+          </div>
+        </section>
+
+        <section class="mc-screen" data-screen="dream">
+          <div class="mc-section-heading">
+            <div class="mc-section-title">Dream room</div>
+            <div class="mc-section-subtitle">
+              Место для мечтаний, ритуалов и небольших радостей мамы.
+            </div>
+          </div>
+        </section>
+
+        <section class="mc-screen" data-screen="profile">
+          <div class="mc-section-heading">
+            <div class="mc-section-title">Профиль</div>
+            <div class="mc-section-subtitle">
+              Здесь будут этапы, доступы к ассистентам и настройки.
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Нижнее меню навигации -->
+      <nav class="mc-tabbar">
+        <button class="mc-tab mc-tab--active" data-tab="assistants" data-target-screen="segments">
+          <span class="mc-tab-icon mc-tab-icon--assist"></span>
+          <span class="mc-tab-label">ассистенты</span>
+        </button>
+        <button class="mc-tab" data-tab="favorites" data-target-screen="favorites">
+          <span class="mc-tab-icon mc-tab-icon--heart"></span>
+          <span class="mc-tab-label">избранное</span>
+        </button>
+        <button class="mc-tab" data-tab="dream" data-target-screen="dream">
+          <span class="mc-tab-icon mc-tab-icon--dream"></span>
+          <span class="mc-tab-label">dream room</span>
+        </button>
+        <button class="mc-tab" data-tab="profile" data-target-screen="profile">
+          <span class="mc-tab-icon mc-tab-icon--profile"></span>
+          <span class="mc-tab-label">профиль</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+</body>
+</html>
