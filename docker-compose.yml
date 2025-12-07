@@ -21,25 +21,18 @@ services:
     depends_on:
       - db
     environment:
-      # строка подключения к БД — её увидит и main.py, и Alembic
       DATABASE_URL: postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat
-
-      TELEGRAM_BOT_TOKEN: 1234567890:ABCDEF_YOUR_BOT_TOKEN_HERE
-      OPENAI_API_KEY: sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-      FRONTEND_ORIGIN: https://miniapp.example.com
+      TELEGRAM_BOT_TOKEN: "1234567890:ABCDEF"
+      OPENAI_API_KEY: "sk-xxxx"
+      FRONTEND_ORIGIN: "https://your-domain.com"
       DEFAULT_DAILY_REQUESTS: "30"
       DEFAULT_MONTHLY_REQUESTS: "200"
-<<<<<<< HEAD
-      DEFAULT_MODEL: gpt-4.1-mini
-=======
-      DEFAULT_MODEL: gpt-4o-mini
->>>>>>> 4077ef73a642438935e6af76ec086a5aa7436986
-      LOG_LEVEL: INFO
+      DEFAULT_MODEL: "gpt-4.1-mini"
+      LOG_LEVEL: "INFO"
       RATE_LIMIT_PER_MINUTE: "120"
     ports:
       - "8000:8000"
-    # Если хочешь авто-перезапуск при изменении кода локально — потом добавим volumes
 
 volumes:
   motherschat_db_data:
+
