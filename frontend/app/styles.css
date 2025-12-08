@@ -1,25 +1,18 @@
 :root {
-  --mc-bg-top: #0b7a7b;
-  --mc-bg-bottom: #003f40;
-  --mc-glass-bg: rgba(7, 61, 64, 0.35);
-  --mc-glass-border: rgba(255, 255, 255, 0.18);
-  --mc-card-bg: rgba(255, 255, 255, 0.97);
-  --mc-card-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  /* Базовые цвета (по твоему фону) */
+  --m-color-bg-top: #0b7a7b;
+  --m-color-bg-bottom: #003f40;
 
-  --mc-text-main: #fdf9f8;
-  --mc-text-soft: #e1d9d6;
-  --mc-text-dark: #2a2531;
+  --m-color-text-main: #ffffff;
+  --m-color-text-soft: #e3e6e8;
 
-  --mc-accent-pink: #7fd2c0;   /* мята */
---mc-accent-lilac: #b4e1da;  /* светлее мята */
-  --mc-accent-mint: #52b5a8;
+  --m-radius-large: 26px;
+  --m-radius-medium: 18px;
+  --m-radius-pill: 999px;
 
-  --mc-radius-large: 26px;
-  --mc-radius-medium: 18px;
-  --mc-radius-small: 999px;
+  --m-tabbar-height: 70px;
 
-  --mc-tabbar-height: 64px;
-  --mc-font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --m-font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
 }
 
 *,
@@ -28,7 +21,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -36,445 +30,196 @@ html, body {
 }
 
 body {
-  font-family: var(--mc-font-ui);
+  font-family: var(--m-font-ui);
   background: #000;
 }
 
-.mc-root {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-}
+/* === ФОНЫ === */
 
-/* Фон */
-
-.mc-bg {
+/* базовый фон для внутренних экранов (без девушки) */
+.m-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   background:
-    /* фон-картинка из фигмы */
-    url("/app/bg-mamino.png") center center / cover no-repeat,
-    /* запасной градиент, если картинка не загрузится */
-    linear-gradient(180deg, var(--mc-bg-top), var(--mc-bg-bottom));
+    url("/app/bg-main.png") center center / cover no-repeat,
+    linear-gradient(180deg, var(--m-color-bg-top), var(--m-color-bg-bottom));
 }
 
+/* фон первого экрана с девушкой */
+.m-bg--hero {
+  background:
+    url("/app/bg-hero.png") center top / cover no-repeat,
+    linear-gradient(180deg, var(--m-color-bg-top), var(--m-color-bg-bottom));
+}
 
-/* Основная "карточка" приложения */
+/* === ОБОЛОЧКА ПРИЛОЖЕНИЯ === */
 
-.mc-shell {
+.m-app {
   position: relative;
   z-index: 1;
-  width: 100%;
+  min-height: 100vh;
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
-  padding: 10px 10px calc(var(--mc-tabbar-height) + 14px);
+  padding: 12px 12px calc(var(--m-tabbar-height) + 14px);
   display: flex;
   flex-direction: column;
-  color: var(--mc-text-main);
+  color: var(--m-color-text-main);
 }
 
-/* Стеклянная панель */
-
-.mc-shell::before {
+/* Стеклянная панель (слегка отделяем контент от фона, но не убиваем картинку) */
+.m-app::before {
   content: "";
   position: absolute;
-  inset: 8px 8px calc(var(--mc-tabbar-height) + 8px);
-  border-radius: 32px;
-  background: linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.16),
-      rgba(255, 255, 255, 0.04)
-    );
-  border: 1px solid var(--mc-glass-border);
-  backdrop-filter: blur(22px);
+  inset: 10px 10px calc(var(--m-tabbar-height) + 10px);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.08) 0, transparent 55%);
+  backdrop-filter: blur(12px);
   z-index: -1;
 }
 
-/* Топбар */
+/* === ХЕДЕР === */
 
-.mc-topbar {
-  padding: 10px 16px 6px;
+.m-header {
+  padding: 6px 10px 4px;
 }
 
-.mc-topbar-title {
-  font-size: 18px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.mc-topbar-subtitle {
-  font-size: 12px;
-  color: var(--mc-text-soft);
-}
-
-.mc-topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.mc-topbar-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 16px;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-  background: radial-gradient(circle at 20% 0, #ffe3f3 0, #ffd6c7 35%, #c7e0ff 100%);
-}
-
-.mc-topbar-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mc-topbar-text {
+.m-header-logo-row {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
 }
 
-
-/* Main: экраны */
-
-.mc-main {
-  flex: 1;
-  padding: 4px 12px 8px;
-  overflow-y: auto;
+.m-header-logo-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Скрытие/показ экранов */
-
-.mc-screen {
-  display: none;
-  min-height: calc(100% - 8px);
-}
-
-.mc-screen--active {
-  display: block;
-}
-
-/* Общие карточки */
-
-.mc-card {
-  border-radius: var(--mc-radius-large);
-  padding: 14px 14px 16px;
-}
-
-.mc-card--glass {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.mc-card--hero {
-  box-shadow: var(--mc-card-shadow);
-}
-
-/* Hero */
-
-.mc-hero-logo-text {
+.m-header-logo-word {
   font-size: 24px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-weight: 700;
-  margin-bottom: 4px;
+  font-weight: 600;
 }
 
-.mc-hero-logo-sub {
-  font-size: 13px;
-  color: var(--mc-text-soft);
+.m-header-logo-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: block;
 }
 
-.mc-hero-text-block {
-  margin-top: 12px;
-  font-size: 13px;
-  color: var(--mc-text-soft);
+/* подзаголовок */
+.m-header-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--m-color-text-soft);
+  line-height: 1.3;
 }
 
-.mc-hero-text {
-  margin: 0 0 4px;
+/* === ОСНОВНОЙ КОНТЕНТ === */
+
+.m-main {
+  flex: 1;
+  padding: 8px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Быстрые кнопки */
+/* карточка в центре (по макету — прямоугольник с округлением и прозрачностью) */
 
-.mc-block-title {
-  margin: 18px 2px 8px;
+.m-card {
+  margin-top: 10px;
+  padding: 16px 18px 18px;
+  border-radius: var(--m-radius-large);
+  background: rgba(0, 52, 54, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.65);
+  max-width: 100%;
+}
+
+.m-card-text {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--m-color-text-soft);
+}
+
+.m-card-text:last-child {
+  margin-bottom: 0;
+}
+
+/* блок "что беспокоит прямо сейчас" */
+
+.m-quick {
+  margin-top: 8px;
+}
+
+.m-quick-title {
+  margin: 0 0 10px;
   font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.mc-quick-grid {
+/* 4 овальных кнопки, как на макете */
+
+.m-quick-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.mc-quick-btn {
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: rgba(4, 49, 52, 0.75);
-  color: var(--mc-text-main);
+.m-quick-btn {
+  border-radius: var(--m-radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(0, 58, 60, 0.85);
+  color: var(--m-color-text-main);
   font-size: 13px;
   padding: 9px 10px;
   cursor: pointer;
   text-align: center;
   white-space: normal;
+  line-height: 1.3;
 }
 
-.mc-quick-btn:hover {
-  background: rgba(10, 81, 84, 0.9);
+.m-quick-btn:hover {
+  background: rgba(0, 82, 85, 0.95);
 }
 
-/* Заголовки секций */
-
-.mc-section-heading {
-  margin: 4px 2px 12px;
-}
-
-.mc-section-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.mc-section-subtitle {
-  font-size: 12px;
-  color: var(--mc-text-soft);
-}
-
-/* Список сегментов */
-
-.mc-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 10px;
-}
-
-.mc-list-item {
-  width: 100%;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(4, 50, 53, 0.8);
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  text-align: left;
-  cursor: pointer;
-}
-
-.mc-list-main {
-  font-size: 15px;
-}
-
-.mc-list-sub {
-  font-size: 12px;
-  color: var(--mc-text-soft);
-  margin-top: 1px;
-}
-
-.mc-list-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
-/* Пакеты (Basic/Smart/Pro) */
-
-.mc-pack {
-  border-radius: 20px;
-  background: rgba(4, 50, 53, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  padding: 10px 12px 12px;
-  margin-bottom: 10px;
-}
-
-.mc-pack--accent {
-  background: rgba(7, 82, 86, 0.96);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
-}
-
-.mc-pack-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.mc-pack-name {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.mc-pack-badge {
-  border-radius: 999px;
-  padding: 4px 10px;
-  background: rgba(123, 211, 182, 0.9);
+.m-quick-btn--active {
+  background: #7fd2c0;
   color: #05332f;
-  font-size: 11px;
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
-.mc-pack-list {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 13px;
-  color: var(--mc-text-soft);
-}
+/* === НИЖНЯЯ НАВИГАЦИЯ === */
 
-.mc-pack-list li {
-  margin-bottom: 2px;
-}
-
-.mc-pack-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-/* Кнопки */
-
-.mc-btn {
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 13px;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.mc-btn--primary {
-  background: #7fd2c0; /* мягкий мятный, под твой тёмный фон */
-  color: #05332f;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.mc-btn--primary:hover {
-  filter: brightness(1.05);
-}
-
-
-.mc-btn--ghost {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  color: var(--mc-text-main);
-}
-
-.mc-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* Ассистент — карточка */
-
-.mc-assistant-card {
-  border-radius: 26px;
-  background: var(--mc-card-bg);
-  color: var(--mc-text-dark);
-  padding: 16px 16px 14px;
-  box-shadow: var(--mc-card-shadow);
-}
-
-.mc-assistant-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.mc-assistant-brand {
-  font-size: 19px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: #b08acb;
-}
-
-.mc-assistant-tariff {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #3b857b;
-  color: #f5fffa;
-  font-size: 11px;
-}
-
-.mc-assistant-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.mc-assistant-body {
-  font-size: 13px;
-}
-
-.mc-assistant-lead {
-  margin: 0 0 8px;
-}
-
-.mc-assistant-block {
-  margin-bottom: 8px;
-}
-
-.mc-assistant-block-title {
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.mc-assistant-list {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.mc-assistant-list li {
-  margin-bottom: 2px;
-}
-
-.mc-assistant-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-/* Таббар */
-
-.mc-tabbar {
+.m-tabbar {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 8px;
-  width: calc(100% - 20px);
+  bottom: 6px;
+  width: calc(100% - 24px);
   max-width: 480px;
-  height: var(--mc-tabbar-height);
+  height: var(--m-tabbar-height);
   border-radius: 22px;
-  background: rgba(4, 46, 49, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 47, 49, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  padding: 6px 8px 6px;
+  padding: 6px 10px;
   z-index: 5;
 }
 
-.mc-tab {
+.m-tab {
   border: none;
   background: transparent;
-  color: var(--mc-text-soft);
+  color: var(--m-color-text-soft);
   font-size: 11px;
   display: flex;
   flex-direction: column;
@@ -484,65 +229,90 @@ body {
   cursor: pointer;
 }
 
-.mc-tab--active {
-  color: var(--mc-accent-pink);
+.m-tab--active {
+  color: #7fd2c0;
 }
 
-.mc-tab-icon {
-  width: 20px;
-  height: 20px;
+/* иконки таббара — простые формы, чтобы быть похожими на макет */
+
+.m-tab-icon {
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   position: relative;
 }
 
-/* Иконки таббара — упрощённая стилизация */
+/* ассистенты — шар с мягким градиентом */
 
-.mc-tab-icon--assist::before,
-.mc-tab-icon--heart::before,
-.mc-tab-icon--dream::before,
-.mc-tab-icon--profile::before {
+.m-tab-icon--assistants::before {
   content: "";
   position: absolute;
-  inset: 4px;
+  inset: 3px;
   border-radius: inherit;
+  background: radial-gradient(circle at 20% 0, #ffe3f3 0, #ffd6c7 35%, #c7e0ff 100%);
 }
 
-.mc-tab-icon--assist::before {
-  border: 2px solid rgba(193, 255, 232, 0.9);
+/* избранное — сердечко */
+
+.m-tab-icon--favorites::before {
+  content: "❤";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #ffb2c7;
 }
 
-.mc-tab-icon--heart::before {
-  border-radius: 30% 70% 60% 40%;
-  border: 2px solid rgba(255, 193, 218, 0.9);
+/* dream room — облачко */
+
+.m-tab-icon--dream::before {
+  content: "☁";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #f4f2ff;
 }
 
-.mc-tab-icon--dream::before {
-  border-radius: 50% 40% 60% 50%;
-  border: 2px solid rgba(195, 210, 255, 0.9);
+/* профиль — силуэт */
+
+.m-tab-icon--profile::before {
+  content: "👤";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }
 
-.mc-tab-icon--profile::before {
-  border-radius: 50% 50% 46% 46%;
-  border: 2px solid rgba(255, 222, 193, 0.9);
-}
+/* подписи табов */
 
-.mc-tab-label {
+.m-tab-label {
   text-transform: lowercase;
 }
 
-/* Адаптив */
+/* === АДАПТИВ === */
 
-@media (max-width: 400px) {
-  .mc-shell {
-    padding-inline: 6px;
+@media (max-width: 420px) {
+  .m-app {
+    padding-inline: 8px;
   }
 
-  .mc-shell::before {
-    inset-inline: 4px;
+  .m-app::before {
+    inset-inline: 6px;
   }
 
-  .mc-tabbar {
-    width: calc(100% - 12px);
+  .m-tabbar {
+    width: calc(100% - 16px);
+  }
+
+  .m-card {
+    padding-inline: 14px;
   }
 }
