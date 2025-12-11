@@ -9,7 +9,8 @@ import uuid
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base, relationship
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
+
 
 # ----------------------------
 # Database setup
@@ -40,10 +41,14 @@ class User(Base):
 class Assistant(Base):
     __tablename__ = "assistants"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    base_model = Column(String, nullable=False)
     system_prompt = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    extra_config = Column(JSON, nullable=False)
+
 
 
 class ChatSession(Base):
@@ -64,6 +69,8 @@ class ChatMessage(Base):
     content = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+# создаём недостающие таблицы (users, chat_sessions, chat_messages)
+Base.metadata.create_all(bind=engine)
 
 # ----------------------------
 # Pydantic Schemas
