@@ -836,6 +836,184 @@ def chat_send(
         assistant_message_tokens=assistant_tokens,
     )
 
+# =========================
+# ЧАТ ДЛЯ MINIAPP "MAMINO"
+# =========================
+
+class ChatSessionCreate(BaseModel):
+    assistant_slug: str
+    telegram_id: str
+
+
+class ChatSessionResponse(BaseModel):
+    session_id: uuid.UUID
+
+
+class ChatSendRequest(BaseModel):
+    session_id: uuid.UUID
+    assistant_slug: str
+    message: str
+
+
+class ChatMessageDTO(BaseModel):
+    role: str
+    content: str
+    created_at: str
+
+
+class ChatSendResponse(BaseModel):
+    reply: str
+    messages: list[ChatMessageDTO]
+
+
+# если у тебя ВЫШЕ в файле уже есть get_db() – этот блок не добавляй второй раз.
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@app.post("/chat/session", response_model=ChatSessionResponse)
+def create_chat_session(
+    payload: ChatSessionCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Создаёт новую сессию чата для заданного ассистента и telegram_id.
+    """
+    assistant: Optional[Assistant] = (
+        db.query(Assistant)
+        .filter(Assistant.slug == payload.assistant_slug)
+        .first()
+    )
+    if not assistant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ассистент не найден",
+        )
+
+    # ищем или создаём пользователя по telegram_id
+    user = (
+        db.query(User)
+        .filter(User.telegram_id == payload.telegram_id)
+        .first()
+    )
+    if not user:
+        user = User(telegram_id=payload.telegram_id, profile={})
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    session = ChatSession(user_id=user.id, assistant_id=assistant.id)
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+
+    # сохраняем системное сообщение с промтом ассистента
+    system_msg = ChatMessage(
+        session_id=session.id,
+        role="system",
+        content=assistant.system_prompt,
+    )
+    db.add(system_msg)
+    db.commit()
+
+    return ChatSessionResponse(session_id=session.id)
+
+
+@app.post("/chat/send", response_model=ChatSendResponse)
+def send_chat_message(
+    payload: ChatSendRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Принимает сообщение пользователя, обращается к OpenAI с системным промтом ассистента
+    и всей историей диалога, сохраняет ответ и возвращает его.
+    """
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == payload.session_id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Сессия не найдена",
+        )
+
+    assistant = (
+        db.query(Assistant)
+        .filter(Assistant.id == session.assistant_id)
+        .first()
+    )
+    if not assistant or assistant.slug != payload.assistant_slug:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ассистент не соответствует сессии",
+        )
+
+    # сохраняем сообщение пользователя
+    user_msg = ChatMessage(
+        session_id=session.id,
+        role="user",
+        content=payload.message,
+    )
+    db.add(user_msg)
+    db.commit()
+    db.refresh(user_msg)
+
+    # достаём историю сообщений по сессии
+    msgs = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
+
+    # формируем историю для OpenAI
+    openai_messages = [{"role": "system", "content": assistant.system_prompt}]
+    for m in msgs:
+        if m.role == "system":
+            continue
+        openai_messages.append({"role": m.role, "content": m.content})
+
+    # запрос к OpenAI
+    completion = openai_client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=openai_messages,
+    )
+    reply_text = completion.choices[0].message.content
+
+    # сохраняем ответ ассистента
+    assistant_msg = ChatMessage(
+        session_id=session.id,
+        role="assistant",
+        content=reply_text,
+    )
+    db.add(assistant_msg)
+    db.commit()
+    db.refresh(assistant_msg)
+
+    updated = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
+
+    return ChatSendResponse(
+        reply=reply_text,
+        messages=[
+            ChatMessageDTO(
+                role=m.role,
+                content=m.content,
+                created_at=m.created_at.isoformat(),
+            )
+            for m in updated
+        ],
+    )
 
 @app.get("/health")
 def health():
