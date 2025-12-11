@@ -881,17 +881,15 @@ def create_chat_session(
     db: Session = Depends(get_db),
 ):
     """
-    Создаёт новую сессию чата для заданного ассистента и telegram_id.
+    Создаёт новую сессию чата для заданного telegram_id.
+    Пока берём первого доступного ассистента из БД.
     """
-    assistant: Optional[Assistant] = (
-        db.query(Assistant)
-        .filter(Assistant.slug == payload.assistant_slug)
-        .first()
-    )
+    # ВАРИАНТ ДЛЯ MVP: берём первого ассистента
+    assistant: Optional[Assistant] = db.query(Assistant).first()
     if not assistant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ассистент не найден",
+            detail="В системе ещё не настроен ни один ассистент",
         )
 
     # ищем или создаём пользователя по telegram_id
@@ -948,11 +946,12 @@ def send_chat_message(
         .filter(Assistant.id == session.assistant_id)
         .first()
     )
-    if not assistant or assistant.slug != payload.assistant_slug:
+    if not assistant:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ассистент не соответствует сессии",
+            detail="Ассистент не найден для этой сессии",
         )
+
 
     # сохраняем сообщение пользователя
     user_msg = ChatMessage(
