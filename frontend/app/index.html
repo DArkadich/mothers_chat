@@ -1,89 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>MAMINO — ассистенты для мам</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light">
-  <link rel="stylesheet" href="/app/styles.css?v=11">
-  <script src="/app/main.js?v=10" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mamino</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <!-- Глобальный фон: hero (с девушкой) для первого экрана -->
-  <div class="m-bg m-bg--hero"></div>
 
-  <!-- Оболочка миниаппа -->
-  <div class="m-app">
-    <!-- Верхний блок с логотипом и подзаголовком -->
-    <header class="m-header">
-      <div class="m-header-logo-row">
-        <div class="m-header-logo-text">
-          <span class="m-header-logo-word">MAMIN</span>
-          <img src="/app/logo-mamino.png" alt="Mamino" class="m-header-logo-icon">
-        </div>
-        <div class="m-header-subtitle">
-          помощь маме, которая<br>всегда под рукой
-        </div>
+<body>
+  <div class="app">
+
+    <!-- Верхняя плашка -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__text">mamin</div>
+        <img class="brand__logo" src="logo-mamino.png" alt="Mamino" />
       </div>
     </header>
 
-    <!-- Основной контент первого экрана -->
-    <main class="m-main">
-      <!-- Полупрозрачная карточка с текстом (как в макете) -->
-      <section class="m-card">
-        <p class="m-card-text">
-          Мы собрали лучших AI-ассистентов для мам:<br>
-          от беременности до подростков.
-        </p>
-        <p class="m-card-text">
-          Они помогают, подсказывают,<br>
-          успокаивают и делают твою<br>
-          рутину легче.
-        </p>
+    <!-- Экран: Главная -->
+    <main id="screen-home" class="screen screen--active">
+      <section class="hero">
+        <div class="hero__bg">
+          <img class="hero__img" src="bg-hero.png" alt="" />
+        </div>
+
+        <div class="hero__content">
+          <h1 class="h1">Добро пожаловать</h1>
+          <p class="p">
+            Здесь собраны мягкие помощники для будущих мам и родителей — без давления и страшилок.
+          </p>
+          <button id="goAssistants" class="btn btn--primary">Выбрать ассистента</button>
+        </div>
       </section>
 
-      <!-- Блок "что беспокоит прямо сейчас" -->
-      <section class="m-quick">
-        <h2 class="m-quick-title">
-          ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?
-        </h2>
-
-        <div class="m-quick-grid">
-          <button class="m-quick-btn" data-topic="sleep">
-            сон младенца
-          </button>
-          <button class="m-quick-btn" data-topic="colic">
-            колики
-          </button>
-          <button class="m-quick-btn" data-topic="crisis3">
-            кризис 3х лет
-          </button>
-          <button class="m-quick-btn" data-topic="talk">
-            хочу поговорить
-          </button>
+      <section class="card card--soft">
+        <div class="card__title">Как это работает</div>
+        <div class="card__text">
+          Вы выбираете ассистента → задаёте вопрос → получаете ответ в чате.
         </div>
       </section>
     </main>
 
-    <!-- Нижняя панель навигации -->
-    <nav class="m-tabbar">
-      <button class="m-tab m-tab--active" data-tab="assistants">
-        <span class="m-tab-icon m-tab-icon--assistants"></span>
-        <span class="m-tab-label">ассистенты</span>
+    <!-- Экран: Ассистенты -->
+    <main id="screen-assistants" class="screen">
+      <section class="card card--soft">
+        <div class="card__title">Ассистенты</div>
+        <div class="card__text">Выберите помощника и начните диалог.</div>
+      </section>
+
+      <section class="grid" id="assistantsGrid">
+        <!-- Кнопки ассистентов создаются JS -->
+      </section>
+    </main>
+
+    <!-- Экран: Чат -->
+    <main id="screen-chat" class="screen">
+      <section class="chatHeader card card--soft">
+        <div class="chatHeader__title" id="chatTitle">Чат</div>
+        <div class="chatHeader__meta">
+          <span class="badge" id="chatBadge">online</span>
+        </div>
+      </section>
+
+      <section class="chat card card--soft">
+        <div id="chatMessages" class="chat__messages"></div>
+
+        <div class="chat__inputRow">
+          <input id="chatInput" class="chat__input" type="text" placeholder="Напишите сообщение…" autocomplete="off" />
+          <button id="chatSendButton" class="btn btn--primary btn--small">Отпр.</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Нижний таббар -->
+    <nav class="tabbar">
+      <button class="tabbar__btn" data-screen="home" id="tabHome">
+        <span class="tabbar__icon">🏠</span>
+        <span class="tabbar__text">Главная</span>
       </button>
-      <button class="m-tab" data-tab="favorites">
-        <span class="m-tab-icon m-tab-icon--favorites"></span>
-        <span class="m-tab-label">избранное</span>
+
+      <button class="tabbar__btn" data-screen="assistants" id="tabAssistants">
+        <span class="tabbar__icon">🤖</span>
+        <span class="tabbar__text">Ассистенты</span>
       </button>
-      <button class="m-tab" data-tab="dream">
-        <span class="m-tab-icon m-tab-icon--dream"></span>
-        <span class="m-tab-label">dream room</span>
-      </button>
-      <button class="m-tab" data-tab="profile">
-        <span class="m-tab-icon m-tab-icon--profile"></span>
-        <span class="m-tab-label">профиль</span>
+
+      <button class="tabbar__btn" data-screen="chat" id="tabChat" disabled>
+        <span class="tabbar__icon">💬</span>
+        <span class="tabbar__text">Чат</span>
       </button>
     </nav>
   </div>
+
+  <!-- Telegram WebApp SDK (в TG доступен автоматически, но это помогает в web-просмотре) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
