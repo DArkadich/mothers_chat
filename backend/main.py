@@ -102,6 +102,14 @@ class ChatSendResponse(BaseModel):
     messages: List[ChatMessageDTO]
 
 
+class ChatHistoryRequest(BaseModel):
+    session_id: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: List[ChatMessageDTO]
+
+
 # ----------------------------
 # DB dependency
 # ----------------------------
@@ -262,5 +270,35 @@ def chat_send(payload: ChatSendRequest, db: Session = Depends(get_db)):
                 created_at=m.created_at.isoformat(),
             )
             for m in updated
+        ]
+    )
+
+
+@app.post("/chat/history", response_model=ChatHistoryResponse)
+def chat_history(payload: ChatHistoryRequest, db: Session = Depends(get_db)):
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == payload.session_id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(404, "Сессия не найдена")
+
+    history = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
+
+    return ChatHistoryResponse(
+        messages=[
+            ChatMessageDTO(
+                role=m.role,
+                content=m.content,
+                created_at=m.created_at.isoformat(),
+            )
+            for m in history
+            if m.role != "system"
         ]
     )
