@@ -37,3 +37,6 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+# local scratch
+backend/main_real.py
+main_old.py
