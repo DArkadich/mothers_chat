@@ -1,16 +1,13 @@
-# backend/main.py
-
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import List
 from datetime import datetime
 import uuid
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session, declarative_base, relationship
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
-
 
 # ----------------------------
 # Database setup
@@ -20,9 +17,7 @@ DATABASE_URL = "postgresql+psycopg2://motherschat:motherschat_password@db:5432/m
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
 Base = declarative_base()
-
 
 # ----------------------------
 # Models
@@ -35,8 +30,6 @@ class User(Base):
     telegram_id = Column(String, unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # profile колонку можно добавить позже, сейчас не трогаем
-
 
 class Assistant(Base):
     __tablename__ = "assistants"
@@ -48,7 +41,6 @@ class Assistant(Base):
     base_model = Column(String, nullable=False)
     system_prompt = Column(Text, nullable=False)
     extra_config = Column(JSON, nullable=False)
-
 
 
 class ChatSession(Base):
@@ -109,7 +101,6 @@ class ChatHistoryRequest(BaseModel):
 class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageDTO]
 
-
 # ----------------------------
 # DB dependency
 # ----------------------------
@@ -121,7 +112,6 @@ def get_db():
     finally:
         db.close()
 
-
 # ----------------------------
 # OpenAI client
 # ----------------------------
@@ -131,7 +121,6 @@ from openai import OpenAI
 OPENAI_MODEL = "gpt-4o-mini"
 openai_client = OpenAI()
 
-
 # ----------------------------
 # FastAPI init
 # ----------------------------
@@ -140,17 +129,15 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # позже заменим на домен мамино
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 # ----------------------------
 # Routes
 # ----------------------------
-
 
 @app.get("/health")
 def health():
@@ -159,14 +146,15 @@ def health():
 
 @app.post("/chat/session", response_model=ChatSessionResponse)
 def create_chat_session(payload: ChatSessionCreate, db: Session = Depends(get_db)):
-    """Создание чат-сессии. Пока игнорируем slug, берём первого ассистента."""
+    """Создание (или получение существующей) чат-сессии по assistant_slug (= assistants.code)."""
 
-    assistant = db.query(Assistant).first()
+    assistant = (
+        db.query(Assistant)
+        .filter(Assistant.code == payload.assistant_slug)
+        .first()
+    )
     if not assistant:
-        raise HTTPException(
-            status_code=404,
-            detail="В системе ещё нет ассистентов"
-        )
+        raise HTTPException(status_code=404, detail="Ассистент не найден")
 
     user = db.query(User).filter(User.telegram_id == payload.telegram_id).first()
     if not user:
@@ -174,6 +162,16 @@ def create_chat_session(payload: ChatSessionCreate, db: Session = Depends(get_db
         db.add(user)
         db.commit()
         db.refresh(user)
+
+    # ВАЖНО: если сессия уже существует — возвращаем её (чтобы история сохранялась)
+    existing = (
+        db.query(ChatSession)
+        .filter(ChatSession.user_id == user.id, ChatSession.assistant_id == assistant.id)
+        .order_by(ChatSession.created_at.desc())
+        .first()
+    )
+    if existing:
+        return ChatSessionResponse(session_id=existing.id)
 
     session = ChatSession(
         user_id=user.id,
@@ -183,7 +181,7 @@ def create_chat_session(payload: ChatSessionCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(session)
 
-    # Добавляем системное сообщение с промтом
+    # Добавляем системное сообщение с промтом только для новой сессии
     sys_msg = ChatMessage(
         session_id=session.id,
         role="system",
@@ -193,6 +191,38 @@ def create_chat_session(payload: ChatSessionCreate, db: Session = Depends(get_db
     db.commit()
 
     return ChatSessionResponse(session_id=session.id)
+
+
+@app.post("/chat/history", response_model=ChatHistoryResponse)
+def chat_history(payload: ChatHistoryRequest, db: Session = Depends(get_db)):
+    """Получение истории сообщений по session_id (без system)."""
+
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == payload.session_id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(404, "Сессия не найдена")
+
+    history = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
+
+    return ChatHistoryResponse(
+        messages=[
+            ChatMessageDTO(
+                role=m.role,
+                content=m.content,
+                created_at=m.created_at.isoformat(),
+            )
+            for m in history
+            if m.role != "system"
+        ]
+    )
 
 
 @app.post("/chat/send", response_model=ChatSendResponse)
@@ -228,18 +258,17 @@ def chat_send(payload: ChatSendRequest, db: Session = Depends(get_db)):
         .all()
     )
 
-    messages_for_openai = []
-    for m in history:
-        messages_for_openai.append(
-            {"role": m.role, "content": m.content}
-        )
+    messages_for_openai = [{"role": m.role, "content": m.content} for m in history]
 
     # Запрос к модели
     try:
+        model_name = assistant.base_model or OPENAI_MODEL
+
         completion = openai_client.chat.completions.create(
-            model=OPENAI_MODEL,
+            model=model_name,
             messages=messages_for_openai
         )
+
         reply = completion.choices[0].message.content
     except Exception as e:
         raise HTTPException(500, f"OpenAI error: {str(e)}")
@@ -270,35 +299,6 @@ def chat_send(payload: ChatSendRequest, db: Session = Depends(get_db)):
                 created_at=m.created_at.isoformat(),
             )
             for m in updated
-        ]
-    )
-
-
-@app.post("/chat/history", response_model=ChatHistoryResponse)
-def chat_history(payload: ChatHistoryRequest, db: Session = Depends(get_db)):
-    session = (
-        db.query(ChatSession)
-        .filter(ChatSession.id == payload.session_id)
-        .first()
-    )
-    if not session:
-        raise HTTPException(404, "Сессия не найдена")
-
-    history = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.session_id == session.id)
-        .order_by(ChatMessage.created_at)
-        .all()
-    )
-
-    return ChatHistoryResponse(
-        messages=[
-            ChatMessageDTO(
-                role=m.role,
-                content=m.content,
-                created_at=m.created_at.isoformat(),
-            )
-            for m in history
             if m.role != "system"
         ]
     )
