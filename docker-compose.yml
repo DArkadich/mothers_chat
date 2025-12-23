@@ -25,9 +25,6 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat
-      TELEGRAM_BOT_TOKEN: "1234567890:ABCDEF"
-      OPENAI_API_KEY: "sk-xxxx"
       FRONTEND_ORIGIN: "https://mamino.online"
       DEFAULT_DAILY_REQUESTS: "30"
       DEFAULT_MONTHLY_REQUESTS: "200"
