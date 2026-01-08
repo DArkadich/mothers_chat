@@ -18,7 +18,7 @@ if config.config_file_name is not None:
 
 # ⬇️ Очень важно: импортируем Base из твоего кода
 # Если потом вынесешь модели в app/models.py, тут поправишь импорт
-from main import Base  # noqa: E402
+from models import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

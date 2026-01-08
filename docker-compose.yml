@@ -25,12 +25,19 @@ services:
     depends_on:
       - db
     environment:
-      FRONTEND_ORIGIN: "https://mamino.online"
-      DEFAULT_DAILY_REQUESTS: "30"
-      DEFAULT_MONTHLY_REQUESTS: "200"
-      DEFAULT_MODEL: "gpt-4.1-mini"
-      LOG_LEVEL: "INFO"
-      RATE_LIMIT_PER_MINUTE: "120"
+      # DATABASE_URL можно переопределить в .env или через окружение хоста
+      DATABASE_URL: "${DATABASE_URL:-postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat}"
+      # Ключ OpenAI должен задаваться в .env (или в CI/секретах)
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      # Модель по умолчанию (можно переопределить)
+      DEFAULT_MODEL: "${DEFAULT_MODEL:-gpt-4.1-mini}"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-https://mamino.online}"
+      DEFAULT_DAILY_REQUESTS: "${DEFAULT_DAILY_REQUESTS:-30}"
+      DEFAULT_MONTHLY_REQUESTS: "${DEFAULT_MONTHLY_REQUESTS:-200}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      RATE_LIMIT_PER_MINUTE: "${RATE_LIMIT_PER_MINUTE:-120}"
+      # Включить тестовый фейковый OpenAI: 1 — включено (dev/CI), 0 — выключено (prod)
+      ENABLE_FAKE_OPENAI: "${ENABLE_FAKE_OPENAI:-0}"
     ports:
       - "8000:8000"
 

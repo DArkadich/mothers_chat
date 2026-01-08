@@ -1,3 +1,4 @@
+main.js 
 /* global Telegram */
 (function () {
   "use strict";
@@ -77,7 +78,16 @@
 
   function setActiveScreen(name) {
     const appRoot = document.getElementById("appRoot");
-    if (appRoot) appRoot.classList.toggle("app--fullscreen", name === "chat");
+    const tabbarEl = document.querySelector(".tabbar");
+
+    // fullscreen только для чата
+    const isChat = name === "chat";
+    if (appRoot) appRoot.classList.toggle("app--fullscreen", isChat);
+    document.body.classList.toggle("body--chat", isChat);
+
+    // надёжно скрываем таббар (Telegram WebView иногда странно кеширует CSS)
+    if (tabbarEl) tabbarEl.style.display = isChat ? "none" : "grid";
+
     screenHome?.classList.remove("screen--active");
     screenAssistants?.classList.remove("screen--active");
     screenDetails?.classList.remove("screen--active");
@@ -115,7 +125,8 @@
     if (name === "chat") {
       screenChat?.classList.add("screen--active");
       setBg("inner");
-      setActiveTab("tabAssistants");
+      // в чате таббар скрыт, активный таб не нужен
+      setActiveTab(null);
     }
   }
 
@@ -218,24 +229,12 @@
   // =========================
 
   const API_BASE = "/api";
-  const TELEGRAM_BOT_USERNAME = "maminonew_bot"; // без @
 
   function getTelegramUserId() {
     try {
       const id = tg?.initDataUnsafe?.user?.id;
       if (typeof id === "number" && Number.isFinite(id)) return String(id);
       if (typeof id === "string" && id.length > 0) return id;
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  // Secure source from Telegram WebApp. Prefer this over initDataUnsafe.
-  function getInitData() {
-    try {
-      const initData = tg?.initData;
-      if (typeof initData === "string" && initData.length > 0) return initData;
       return null;
     } catch {
       return null;
@@ -262,14 +261,9 @@
     return data;
   }
 
-  function setChatStatus(msg, opts) {
+  function setChatStatus(msg) {
     if (!chatStatusEl) return;
-    const asHtml = opts && opts.html === true;
-    if (asHtml) {
-      chatStatusEl.innerHTML = msg || "";
-    } else {
-      chatStatusEl.textContent = msg || "";
-    }
+    chatStatusEl.textContent = msg || "";
   }
 
   function clearChatUi() {
@@ -288,14 +282,9 @@
   }
 
   async function loadChatHistory(sessionId) {
-    try {
-      const data = await apiPost("/chat/history", { session_id: sessionId });
-      const msgs = data?.messages;
-      return Array.isArray(msgs) ? msgs : [];
-    } catch (e) {
-      console.warn("[mamino] history unavailable:", e);
-      return [];
-    }
+    const data = await apiPost("/chat/history", { session_id: sessionId });
+    const msgs = data?.messages;
+    return Array.isArray(msgs) ? msgs : [];
   }
 
   function appendChatBubble(role, text) {
@@ -320,15 +309,12 @@
     const cached = localStorage.getItem(sessionStorageKey(assistantSlug));
     if (cached && cached.length > 0) return cached;
 
-    const initData = getInitData();
-    if (!initData) {
-      // Важно: не используем initDataUnsafe как источник доверия.
-      throw new Error("Открой мини-приложение внутри Telegram (initData недоступен).");
-    }
+    const telegramId = getTelegramUserId();
+    if (!telegramId) throw new Error("Нет telegram_id (открой Mini App в Telegram).");
 
     const data = await apiPost("/chat/session", {
       assistant_slug: assistantSlug,
-      init_data: initData
+      telegram_id: telegramId
     });
 
     if (!data || !data.session_id) throw new Error("Backend не вернул session_id");
@@ -359,33 +345,7 @@
         }
         chatInputEl?.focus();
       })
-      .catch((e) => {
-        const m = String(e?.message || "");
-        if (m.includes("initData")) {
-          const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
-
-          setChatStatus(
-            'Открой мини-приложение внутри Telegram.<br><br>' +
-            `<a id="btnOpenTelegram" class="btnPink btnPink--primary" href="${botUrl}" target="_blank" rel="noopener">Открыть Telegram</a>` +
-            '<div style="height:10px"></div>' +
-            '<button id="btnCopyLink" class="btnPink btnPink--primary" type="button">Скопировать ссылку</button>',
-            { html: true }
-          );
-
-          const btn = document.getElementById("btnCopyLink");
-          btn?.addEventListener("click", async () => {
-            try {
-              await navigator.clipboard.writeText(window.location.href);
-              setChatStatus("Ссылка скопирована. Открой её в Telegram.", { html: false });
-            } catch {
-              setChatStatus("Не удалось скопировать ссылку. Скопируй вручную из адресной строки.", { html: false });
-            }
-          });
-
-          return;
-        }
-        setChatStatus(`Ошибка: ${m}`);
-      });
+      .catch((e) => setChatStatus(`Ошибка: ${e.message}`));
   }
 
   async function sendChatMessage(text) {
@@ -825,9 +785,6 @@
   // Boot
   function boot() {
     setupTelegramUi();
-    if (tg && !getInitData()) {
-      console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
-    }
     renderAssistants();
     wireEvents();
     setActiveScreen("home");

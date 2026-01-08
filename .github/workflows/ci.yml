@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run unit tests
+        run: pytest -q
+
+  smoke-compose:
+    name: Smoke (docker-compose)
+    runs-on: ubuntu-latest
+    needs: tests
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Docker / Compose
+        run: |
+          docker --version
+          docker compose version || true
+      - name: Start docker compose
+        run: docker compose up -d --build
+      - name: Run smoke script (with fake OpenAI)
+        env:
+          ENABLE_FAKE_OPENAI: '1'
+        run: |
+          chmod +x ./scripts/smoke_compose_check.sh
+          ./scripts/smoke_compose_check.sh --reset-volume
+      - name: Tear down docker compose
+        if: always()
+        run: docker compose down -v

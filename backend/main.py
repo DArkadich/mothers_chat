@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -13,7 +14,10 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
 # Database setup
 # ----------------------------
 
-DATABASE_URL = "postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat",
+)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
@@ -118,8 +122,17 @@ def get_db():
 
 from openai import OpenAI
 
-OPENAI_MODEL = "gpt-4o-mini"
-openai_client = OpenAI()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+
+# Инициализация клиента OpenAI: не падаем при импорте — если ключ не задан или
+# инициализация не удалась, оставляем `openai_client = None` и проверяем при вызове.
+openai_client = None
+if OPENAI_API_KEY:
+    try:
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    except Exception:
+        openai_client = None
 
 # ----------------------------
 # FastAPI init
@@ -261,6 +274,9 @@ def chat_send(payload: ChatSendRequest, db: Session = Depends(get_db)):
     messages_for_openai = [{"role": m.role, "content": m.content} for m in history]
 
     # Запрос к модели
+    if not openai_client:
+        raise HTTPException(status_code=500, detail="OpenAI client is not configured")
+
     try:
         model_name = assistant.base_model or OPENAI_MODEL
 

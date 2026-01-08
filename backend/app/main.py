@@ -30,9 +30,23 @@ def create_chat_session(
     payload: ChatSessionCreate,
     db: Session = Depends(get_db),
 ):
+    # Inspect DB columns to avoid referencing non-existing columns
+    from sqlalchemy import inspect
+
+    inspector = inspect(engine)
+    cols = [c['name'] for c in inspector.get_columns('assistants')]
+
+    filters = []
+    if 'slug' in cols:
+        filters.append(Assistant.slug == payload.assistant_slug)
+    if 'code' in cols:
+        filters.append(Assistant.code == payload.assistant_slug)
+    if not filters:
+        filters.append(Assistant.code == payload.assistant_slug)
+
     assistant: Optional[Assistant] = (
         db.query(Assistant)
-        .filter(Assistant.slug == payload.assistant_slug)
+        .filter(or_(*filters))
         .first()
     )
     if not assistant:
@@ -104,7 +118,7 @@ def send_chat_message(
         .filter(Assistant.id == session.assistant_id)
         .first()
     )
-    if not assistant or assistant.slug != payload.assistant_slug:
+    if not assistant or (getattr(assistant, 'slug', None) != payload.assistant_slug and getattr(assistant, 'code', None) != payload.assistant_slug):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ассистент не соответствует сессии",

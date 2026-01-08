@@ -1,0 +1,144 @@
+index.html
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mamino</title>
+  <link rel="stylesheet" href="/app/styles.css?v=20251220-3" />
+</head>
+
+<body>
+  <!-- фон для HOME (с девушкой) -->
+  <img class="bg-hero" src="/app/bg-hero.png" alt="" aria-hidden="true" id="bgHero" />
+  <!-- фон для внутренних экранов (без девушки) -->
+  <img class="bg-main" src="/app/bg-main.png" alt="" aria-hidden="true" id="bgMain" />
+
+  <div class="app" id="appRoot">
+
+    <!-- ============ HOME (показывается при первом заходе) ============ -->
+    <main id="screen-home" class="screen screen--active">
+      <header class="header">
+        <div class="logo">
+          <span class="logo__word">MAMIN</span>
+          <img class="logo__o" src="/app/logo-mamino.png" alt="O" />
+        </div>
+
+        <div class="tagline">
+          <div class="tagline__line">ПОМОЩЬ МАМЕ, КОТОРАЯ</div>
+          <div class="tagline__line">ВСЕГДА ПОД РУКОЙ</div>
+        </div>
+      </header>
+
+      <section class="glass glass--copy" id="homeCopy">
+        <p class="copy">
+          Мы собрали лучших AI-ассистентов для мам: от беременности до подростков.
+          <br><br>
+          Они помогают, подсказывают, успокаивают и делают твою рутину легче.
+        </p>
+      </section>
+
+      <section class="section" id="homeQuestions">
+        <h2 class="section__title">ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?</h2>
+
+        <div class="chips">
+          <button class="chip" id="btnBabySleep" type="button">СОН МЛАДЕНЦА</button>
+          <button class="chip" type="button" disabled>КОЛИКИ</button>
+          <button class="chip" type="button" disabled>КРИЗИС 3Х ЛЕТ</button>
+          <button class="chip" type="button" disabled>ХОЧУ ПОГОВОРИТЬ</button>
+        </div>
+      </section>
+    </main>
+
+
+    <!-- ============ ASSISTANTS (аккордеон) ============ -->
+    <main id="screen-assistants" class="screen">
+      <section class="assistants">
+        <div id="assistantsList" class="assistants__list" aria-label="Список ассистентов"></div>
+      </section>
+    </main>
+
+
+    <!-- ============ PACKAGE (список ассистентов, входящих в пакет) ============ -->
+    <main id="screen-package" class="screen">
+      <section class="package glass">
+        <div class="package__head">
+          <div class="package__title" id="packageTitle">Пакет</div>
+          <button class="package__back" id="packageBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="package__list" id="packageList" aria-label="Ассистенты пакета"></div>
+
+        <div class="package__hint" id="packageHint">Выберите ассистента — откроется отдельный чат.</div>
+      </section>
+    </main>
+
+
+    <!-- ============ DETAILS (свайп/тап по ассистентам пакета) ============ -->
+    <main id="screen-details" class="screen">
+      <section class="details glass">
+        <div class="details__head">
+          <button class="details__nav details__nav--prev" id="detailsPrev" type="button" aria-label="Назад">‹</button>
+          <div class="details__title" id="detailsTitle">Беременным • Basic</div>
+          <button class="details__back" id="detailsBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="details__stage" id="detailsStage" aria-label="Карточка ассистента"></div>
+
+        <div class="details__footer">
+          <div class="details__hint">Тапните по карточке или свайпните влево →</div>
+          <div class="details__progress" id="detailsProgress">1 / 3</div>
+        </div>
+      </section>
+    </main>
+
+
+    <!-- ============ CHAT (персональный чат с ассистентом) ============ -->
+    <main id="screen-chat" class="screen">
+      <section class="chat glass">
+        <div class="chat__head">
+          <div class="chat__title" id="chatTitle">Чат</div>
+          <button class="chat__back" id="chatBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="chat__messages" id="chatMessages" aria-label="Сообщения"></div>
+
+        <form class="chat__composer" id="chatForm" autocomplete="off">
+          <input class="chat__input" id="chatInput" type="text" placeholder="Напишите сообщение…" />
+          <button class="chat__send" id="chatSend" type="submit">Отправить</button>
+        </form>
+
+        <div class="chat__status" id="chatStatus" aria-live="polite"></div>
+      </section>
+    </main>
+
+
+    <!-- ============ TABBAR (иконки заказчика) ============ -->
+    <nav class="tabbar" aria-label="Навигация">
+      <button class="tabbar__btn tabbar__btn--active" id="tabAssistants" type="button">
+        <img class="tabbar__icon" src="/app/Icons/Assist.svg" alt="" />
+        <span class="tabbar__txt">ассистенты</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabFav" type="button" disabled>
+        <img class="tabbar__icon" src="/app/Icons/Izbran.svg" alt="" />
+        <span class="tabbar__txt">избранное</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabDream" type="button" disabled>
+        <img class="tabbar__icon" src="/app/Icons/Dream.svg" alt="" />
+        <span class="tabbar__txt">dream room</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabProfile" type="button" disabled>
+        <img class="tabbar__icon" src="/app/Icons/Profile.svg" alt="" />
+        <span class="tabbar__txt">профиль</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/app/main.js?v=20251220-3"></script>
+</body>
+</html>
