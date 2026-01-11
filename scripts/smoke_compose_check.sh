@@ -66,7 +66,7 @@ if [[ -z "$EXISTS" ]]; then
   echo "Assistants schema (not-null check):"
   docker compose exec -T db psql -U motherschat -d motherschat -c "\d+ assistants" || true
   echo "Inserting smoke assistant into DB"
-  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code, title, description, system_prompt, slug) VALUES ('smoke_test_assistant', 'smoke_test_assistant', 'smoke assistant', 'You are a helpful assistant.', 'smoke_test_assistant') ON CONFLICT (code) DO NOTHING;"
+  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code, title, description, base_model, system_prompt, extra_config, slug) VALUES ('smoke_test_assistant', 'smoke_test_assistant', 'smoke assistant', 'fake', 'You are a helpful assistant.', '{}'::jsonb, 'smoke_test_assistant') ON CONFLICT (code) DO NOTHING;"
 else
   echo "Smoke assistant already exists"
 fi
