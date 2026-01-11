@@ -310,10 +310,15 @@ def send_chat_message(
         if cur_tid != str(session_user.telegram_id):
             raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
 
-    # Заглушка ответа (тесту важно только наличие reply)
+    # Заглушка ответа (тесту важно только наличие reply и messages)
     import os
-    FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
-    return {"reply": FAKE_REPLY}
+    reply = os.getenv("FAKE_REPLY", "Hello from fake model")
+    
+    messages = [
+        {"role": "user", "content": payload.message},
+        {"role": "assistant", "content": reply},
+    ]
+    return {"reply": reply, "messages": messages}
 
 
 # Простейший ping, на всякий случай

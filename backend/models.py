@@ -31,12 +31,19 @@ class Assistant(Base):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
         # Автозаполнение title, если не задано
         if not getattr(self, "title", None):
             self.title = getattr(self, "code", None) or "Assistant"
-        # Автозаполнение slug, если не задано (опционально, если slug nullable)
+        
+        # Автозаполнение slug, если не задано
         if hasattr(self, "slug") and not getattr(self, "slug", None):
-            self.slug = (getattr(self, "code", None) or getattr(self, "title", "assistant") or "assistant").lower()
+            base = (getattr(self, "code", None) or getattr(self, "title", None) or "assistant")
+            self.slug = str(base).strip().lower().replace(" ", "-")
+        
+        # Автозаполнение system_prompt, если не задано (для NOT NULL constraint)
+        if hasattr(self, "system_prompt") and not getattr(self, "system_prompt", None):
+            self.system_prompt = "You are a helpful assistant."
 
 
 class ChatSession(Base):
