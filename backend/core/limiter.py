@@ -26,9 +26,3 @@ class _InMemoryLimiter:
             return False
 
 limiter = _InMemoryLimiter()
-
-async def rate_limit_dep(request: Request):
-    key = request.client.host if request.client else "anon"
-    if not limiter.allowed(key):
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
-    return True

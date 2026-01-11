@@ -6,7 +6,7 @@ from typing import List, Literal, Optional, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from backend.core.limiter import rate_limit_dep
+from backend.core.limiter import limiter
 from pydantic import BaseModel, Field
 from sqlalchemy import (
     create_engine,
@@ -90,6 +90,22 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+
+# ==========
+# RATE LIMITING
+# ==========
+
+async def rate_limit_dep(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[Any] = Depends(get_current_user_optional),
+):
+    # твоя логика лимитов
+    key = request.client.host if request.client else "anon"
+    if not limiter.allowed(key):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+    return None
 
 
 # ==========
@@ -268,7 +284,7 @@ def create_chat_session(
     return {"session_id": sess.id}
 
 
-@app.post("/api/chat/send", dependencies=[Depends(rate_limit_dep)])
+@app.post("/api/chat/send", response_model=None, dependencies=[Depends(rate_limit_dep)])
 def send_chat_message(
     payload: ChatSendRequest,
     db: Session = Depends(get_db),
