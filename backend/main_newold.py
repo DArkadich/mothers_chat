@@ -76,7 +76,6 @@ Base = declarative_base()
 
 async def get_current_user_optional(
     request: Request = None,
-    db: Session = None,
 ) -> Optional[Any]:
     """
     Optional dependency. В тестах переопределяется.
@@ -98,9 +97,9 @@ def get_db() -> Session:
 
 async def rate_limit_dep(
     request: Request,
-    db: Session = Depends(get_db),
+    db=Depends(get_db),  # без аннотации Session
     current_user: Optional[Any] = Depends(get_current_user_optional),
-):
+) -> None:
     # твоя логика лимитов
     key = request.client.host if request.client else "anon"
     if not limiter.allowed(key):
@@ -287,7 +286,7 @@ def create_chat_session(
 @app.post("/api/chat/send", response_model=None, dependencies=[Depends(rate_limit_dep)])
 def send_chat_message(
     payload: ChatSendRequest,
-    db: Session = Depends(get_db),
+    db=Depends(get_db),  # без Session
     current_user: Any = Depends(get_current_user_optional),
 ):
     # ассистент
