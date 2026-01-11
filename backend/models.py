@@ -29,6 +29,15 @@ class Assistant(Base):
 
     chat_sessions = relationship("ChatSession", back_populates="assistant")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Автозаполнение title, если не задано
+        if not getattr(self, "title", None):
+            self.title = getattr(self, "code", None) or "Assistant"
+        # Автозаполнение slug, если не задано (опционально, если slug nullable)
+        if hasattr(self, "slug") and not getattr(self, "slug", None):
+            self.slug = (getattr(self, "code", None) or getattr(self, "title", "assistant") or "assistant").lower()
+
 
 class ChatSession(Base):
     __tablename__ = "conversations"

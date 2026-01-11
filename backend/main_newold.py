@@ -311,7 +311,9 @@ def send_chat_message(
             raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
 
     # Заглушка ответа (тесту важно только наличие reply)
-    return {"reply": "ok"}
+    import os
+    FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
+    return {"reply": FAKE_REPLY}
 
 
 # Простейший ping, на всякий случай
