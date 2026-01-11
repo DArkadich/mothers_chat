@@ -63,8 +63,10 @@ set +e
 EXISTS=$(docker compose exec -T db psql -U motherschat -d motherschat -tAc "SELECT 1 FROM assistants WHERE code='smoke_test_assistant' LIMIT 1;" ) || true
 set -e
 if [[ -z "$EXISTS" ]]; then
+  echo "Assistants schema (not-null check):"
+  docker compose exec -T db psql -U motherschat -d motherschat -c "\d+ assistants" || true
   echo "Inserting smoke assistant into DB"
-  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code, title, system_prompt, slug) VALUES ('smoke_test_assistant', 'smoke_test_assistant', 'You are a helpful assistant.', 'smoke_test_assistant') ON CONFLICT (code) DO NOTHING;"
+  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code, title, description, system_prompt, slug) VALUES ('smoke_test_assistant', 'smoke_test_assistant', 'smoke assistant', 'You are a helpful assistant.', 'smoke_test_assistant') ON CONFLICT (code) DO NOTHING;"
 else
   echo "Smoke assistant already exists"
 fi
