@@ -54,6 +54,9 @@ if [[ $RET -ne 0 ]]; then
   docker compose exec -T backend sh -c 'cd backend && alembic upgrade head'
 fi
 
+echo "Current Alembic revision:"
+docker compose exec -T backend sh -c 'cd backend && alembic current' || true
+
 # Insert a smoke assistant if none exists
 echo "Ensuring a test assistant exists (code=smoke_test_assistant)"
 set +e
@@ -61,7 +64,7 @@ EXISTS=$(docker compose exec -T db psql -U motherschat -d motherschat -tAc "SELE
 set -e
 if [[ -z "$EXISTS" ]]; then
   echo "Inserting smoke assistant into DB"
-  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code,title,description,base_model,system_prompt,extra_config) VALUES ('smoke_test_assistant','Smoke test','smoke','gpt-4.1-mini','You are helpful','{}'::jsonb);"
+  docker compose exec -T db psql -U motherschat -d motherschat -c "INSERT INTO assistants (code, title, system_prompt, slug) VALUES ('smoke_test_assistant', 'smoke_test_assistant', 'You are a helpful assistant.', 'smoke_test_assistant') ON CONFLICT (code) DO NOTHING;"
 else
   echo "Smoke assistant already exists"
 fi
