@@ -57,6 +57,9 @@ fi
 echo "Current Alembic revision:"
 docker compose exec -T backend sh -c 'cd backend && alembic current' || true
 
+echo "Users schema (not-null check):"
+docker compose exec -T db psql -U motherschat -d motherschat -c "\d+ users" || true
+
 # Insert a smoke assistant if none exists
 echo "Ensuring a test assistant exists (code=smoke_test_assistant)"
 set +e
