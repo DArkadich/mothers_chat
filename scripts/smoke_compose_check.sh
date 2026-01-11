@@ -15,9 +15,9 @@ export ENABLE_FAKE_OPENAI=${ENABLE_FAKE_OPENAI:-1}
 echo "Project: $(pwd)"
 
 if [[ "$RESET_VOLUME" -eq 1 ]]; then
-  echo "Stopping compose and removing volumes (motherschat_db_data)"
+  echo "Stopping compose and removing volumes"
   docker compose down -v || true
-  docker volume rm motherschat_db_data || true
+  docker volume rm -f motherschat_db_data 2>/dev/null || true
 fi
 
 echo "Starting compose (build if needed)..."
@@ -38,9 +38,9 @@ curl -sS http://localhost:8000/openapi.json | grep -o '"/api[^"\]*"' | sed -n '1
 
 echo "Checking Alembic state inside backend container"
 set +e
-docker compose exec backend sh -c 'cd backend && alembic current'
-docker compose exec backend sh -c 'cd backend && alembic heads'
-docker compose exec backend sh -c 'cd backend && alembic history -n 5'
+docker compose exec -T backend alembic -c /app/alembic.ini current || true
+docker compose exec -T backend alembic -c /app/alembic.ini upgrade head || true
+docker compose exec -T backend alembic -c /app/alembic.ini history | head -n 5 || true
 RET=$?
 set -e
 
@@ -51,7 +51,7 @@ if [[ $RET -ne 0 ]]; then
     docker compose exec db pg_isready -U motherschat && break || true
     sleep 1
   done
-  docker compose exec backend sh -c 'cd backend && alembic upgrade head'
+  docker compose exec -T backend alembic -c /app/alembic.ini upgrade head
 fi
 
 # Insert a smoke assistant if none exists
@@ -68,13 +68,24 @@ fi
 
 # Create session via API
 echo "Creating chat session via API"
-SESSION_ID=$(curl -sS -X POST http://localhost:8000/api/chat/session -H "Content-Type: application/json" -d '{"assistant_slug":"smoke_test_assistant","telegram_id":"999"}' | tr -d '\r\n%' | jq -r '.session_id') || true
+RESP="$(curl -sS -w "\n%{http_code}" -X POST "http://localhost:8000/api/chat/session" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_slug":"smoke_test_assistant","telegram_id":"111"}'
+)"
+BODY="$(echo "$RESP" | sed '$d')"
+CODE="$(echo "$RESP" | tail -n 1)"
 
-if [[ -z "$SESSION_ID" || "$SESSION_ID" == "null" ]]; then
-  echo "Failed to create session; dumping /api/chat/session response:" 
-  curl -sS -X POST http://localhost:8000/api/chat/session -H "Content-Type: application/json" -d '{"assistant_slug":"smoke_test_assistant","telegram_id":"999"}' || true
+echo "HTTP $CODE"
+echo "$BODY"
+
+if [ "$CODE" -ne 200 ]; then
+  echo "Failed to create session; backend logs:"
+  docker compose logs --no-color --tail=200 backend
   exit 1
 fi
+
+# теперь можно jq
+SESSION_ID="$(echo "$BODY" | jq -r '.session_id')"
 
 echo "Session created: $SESSION_ID"
 
