@@ -38,9 +38,9 @@ curl -sS http://localhost:8000/openapi.json | grep -o '"/api[^"\]*"' | sed -n '1
 
 echo "Checking Alembic state inside backend container"
 set +e
-docker compose exec -T backend alembic -c /app/alembic.ini current || true
-docker compose exec -T backend alembic -c /app/alembic.ini upgrade head || true
-docker compose exec -T backend alembic -c /app/alembic.ini history | head -n 5 || true
+docker compose exec -T backend sh -c 'cd backend && alembic current' || true
+docker compose exec -T backend sh -c 'cd backend && alembic upgrade head' || true
+docker compose exec -T backend sh -c 'cd backend && alembic history' | head -n 5 || true
 RET=$?
 set -e
 
@@ -51,7 +51,7 @@ if [[ $RET -ne 0 ]]; then
     docker compose exec db pg_isready -U motherschat && break || true
     sleep 1
   done
-  docker compose exec -T backend alembic -c /app/alembic.ini upgrade head
+  docker compose exec -T backend sh -c 'cd backend && alembic upgrade head'
 fi
 
 # Insert a smoke assistant if none exists
