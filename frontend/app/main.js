@@ -55,6 +55,38 @@
   const chatStatusEl = document.getElementById("chatStatus");
 
   // =========================
+  // State
+  // =========================
+  const state = {
+    onboarded: localStorage.getItem("onboarded") === "1",
+    currentScreen: null,
+    cards: {
+      list: [],
+      index: 0,
+      returnTo: { screen: "assistants", openKey: null }
+    }
+  };
+
+  // =========================
+  // Screen management
+  // =========================
+  function setTabbarVisible(visible) {
+    const tabbar = document.getElementById("tabbar");
+    if (!tabbar) return;
+    tabbar.classList.toggle("tabbar--hidden", !visible);
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("screen--active"));
+    const el = document.getElementById(id);
+    if (el) el.classList.add("screen--active");
+    state.currentScreen = id;
+
+    // таббар: скрываем на онбординге, показываем в остальных
+    setTabbarVisible(id !== "screen-onboarding");
+  }
+
+  // =========================
   // Background switching
   // =========================
   function setBg(mode) {
@@ -84,10 +116,26 @@
     screenPackage?.classList.remove("screen--active");
     screenChat?.classList.remove("screen--active");
 
+    // поддержка новых экранов через showScreen
+    if (name === "onboarding") {
+      showScreen("screen-onboarding");
+      setBg("home");
+      setActiveTab(null);
+      return;
+    }
+
+    if (name === "cards") {
+      showScreen("screen-cards");
+      setBg("inner");
+      setActiveTab("tabAssistants");
+      return;
+    }
+
     if (name === "home") {
       screenHome?.classList.add("screen--active");
       setBg("home");
       setActiveTab(null);
+      setTabbarVisible(true);
       return;
     }
 
@@ -95,6 +143,7 @@
       screenAssistants?.classList.add("screen--active");
       setBg("inner");
       setActiveTab("tabAssistants");
+      setTabbarVisible(true);
       return;
     }
 
@@ -102,6 +151,7 @@
       screenDetails?.classList.add("screen--active");
       setBg("inner");
       setActiveTab("tabAssistants");
+      setTabbarVisible(true);
       return;
     }
 
@@ -109,6 +159,7 @@
       screenPackage?.classList.add("screen--active");
       setBg("inner");
       setActiveTab("tabAssistants");
+      setTabbarVisible(true);
       return;
     }
 
@@ -116,6 +167,7 @@
       screenChat?.classList.add("screen--active");
       setBg("inner");
       setActiveTab("tabAssistants");
+      setTabbarVisible(true);
     }
   }
 
@@ -689,15 +741,26 @@
       });
     }
 
+    // Поддержка deck-карточек через data-open-cards
+    const deckId = `${sectionKey}-${plan.name}`;
+    secondary.setAttribute("data-open-cards", deckId);
+    
     secondary.addEventListener("click", () => {
-      const count = plan.detailsCount || 3;
-      const items = PREGNANCY_ASSISTANTS.slice(0, count).map(a => ({ title: a.title, subtitle: a.subtitle, src: a.src }));
-      detailsOpen({
-        title: sectionTitle,
-        plan: plan.name,
-        items,
-        returnTo: { screen: "assistants", openKey: sectionKey }
-      });
+      // Используем deck-карточки
+      const cardsList = buildCardsForDeck(deckId);
+      if (cardsList && cardsList.length > 0) {
+        openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+      } else {
+        // Fallback на details (для совместимости)
+        const count = plan.detailsCount || 3;
+        const items = PREGNANCY_ASSISTANTS.slice(0, count).map(a => ({ title: a.title, subtitle: a.subtitle, src: a.src }));
+        detailsOpen({
+          title: sectionTitle,
+          plan: plan.name,
+          items,
+          returnTo: { screen: "assistants", openKey: sectionKey }
+        });
+      }
     });
 
     right.appendChild(gifts);
@@ -775,6 +838,151 @@
   }
 
   // =========================
+  // ONBOARDING
+  // =========================
+
+  function openDemoChat(topicId) {
+    localStorage.setItem("onboarded", "1");
+    state.onboarded = true;
+
+    // Маппинг topicId на ассистентов
+    const topicMap = {
+      "sleep": "newborn_0_1", // сон младенца -> секция "Малыши 0-1 год"
+      "colic": "newborn_0_1", // колики -> секция "Малыши 0-1 год"
+      "crisis3": "kids_1_3", // кризис 3х лет -> секция "Малыши 1-3 года"
+      "talk": null // хочу поговорить -> можно показать список ассистентов
+    };
+
+    const sectionKey = topicMap[topicId];
+    if (sectionKey) {
+      // Переход к секции ассистентов
+      setActiveScreen("assistants");
+      openAccordion(sectionKey);
+    } else {
+      // По умолчанию показываем ассистентов
+      setActiveScreen("assistants");
+    }
+  }
+
+  // =========================
+  // DECK CARDS
+  // =========================
+
+  const cardsFront = () => document.getElementById("cardsFront");
+  const cardsNext  = () => document.getElementById("cardsNext");
+  const cardsTitle = () => document.getElementById("cardsTitle");
+  const cardsBody  = () => document.getElementById("cardsBody");
+
+  function applyTheme(el, theme) {
+    if (!el || !theme) return;
+    el.style.setProperty("--card-bg", theme.bg);
+    el.style.setProperty("--card-border", theme.border);
+  }
+
+  function renderCards() {
+    const list = state.cards.list;
+    if (!list.length) return;
+
+    const i = state.cards.index;
+    const cur = list[i];
+    const nxt = list[(i + 1) % list.length];
+
+    const frontEl = cardsFront();
+    const nextEl = cardsNext();
+    const titleEl = cardsTitle();
+    const bodyEl = cardsBody();
+
+    if (!frontEl || !nextEl || !titleEl || !bodyEl) return;
+
+    applyTheme(frontEl, cur.theme);
+    applyTheme(nextEl, nxt.theme);
+
+    titleEl.textContent = cur.title;
+    bodyEl.innerHTML = cur.bodyHtml;
+  }
+
+  function openCards(cardsList, startIndex = 0, returnTo = null) {
+    if (!cardsList || !cardsList.length) return;
+    state.cards.list = cardsList;
+    state.cards.index = Math.max(0, Math.min(startIndex, cardsList.length - 1));
+    if (returnTo) {
+      state.cards.returnTo = returnTo;
+    }
+    renderCards();
+    setActiveScreen("cards");
+  }
+
+  function cardsClose() {
+    const returnTo = state.cards.returnTo || { screen: "assistants", openKey: null };
+    if (returnTo.screen === "assistants" && returnTo.openKey) {
+      setActiveScreen("assistants");
+      openAccordion(returnTo.openKey);
+      const node = assistantsListEl?.querySelector(`.acc[data-key="${CSS.escape(returnTo.openKey)}"]`);
+      node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      setActiveScreen(returnTo.screen || "assistants");
+    }
+  }
+
+  function cardsGoNext() {
+    if (!state.cards.list.length) return;
+    state.cards.index = (state.cards.index + 1) % state.cards.list.length;
+    renderCards();
+  }
+
+  function cardsGoPrev() {
+    if (!state.cards.list.length) return;
+    state.cards.index = (state.cards.index - 1 + state.cards.list.length) % state.cards.list.length;
+    renderCards();
+  }
+
+  // Заглушка — нужно заменить на реальную функцию, используя существующие данные проекта
+  function buildCardsForDeck(deckId) {
+    if (!deckId) return null;
+
+    // Пример: карточки для демонстрации (заменить на реальные данные)
+    const themes = [
+      { bg: "#FCE6EF", border: "#F6B6CE" },
+      { bg: "#EAF3FF", border: "#AFCBFF" },
+      { bg: "#EAF9F1", border: "#9BE3B7" },
+      { bg: "#FFF4E6", border: "#FFD4A3" },
+      { bg: "#F3E5F5", border: "#CE93D8" }
+    ];
+
+    // Парсим deckId: формат "sectionKey-planName" (например, "pregnancy-Basic")
+    const parts = deckId.split("-");
+    if (parts.length < 2) return null;
+
+    const sectionKey = parts[0];
+    const planName = parts.slice(1).join("-"); // На случай, если в planName есть дефисы
+
+    // Ищем секцию
+    const section = SECTIONS.find(s => s.key === sectionKey);
+    if (!section || !section.mvp) return null;
+
+    // Ищем план
+    const plan = section.plans.find(p => p.name === planName);
+    if (!plan) return null;
+
+    // Используем PREGNANCY_ASSISTANTS для секции беременности
+    if (sectionKey === "pregnancy") {
+      const count = plan.detailsCount || 3;
+      return PREGNANCY_ASSISTANTS.slice(0, Math.min(count, PREGNANCY_ASSISTANTS.length)).map((a, idx) => ({
+        title: a.title,
+        bodyHtml: `<p>${a.subtitle}</p><p>Описание ассистента "${a.title}" поможет тебе с вопросами по этой теме.</p>`,
+        theme: themes[idx % themes.length]
+      }));
+    }
+
+    // По умолчанию возвращаем примерные карточки
+    return [
+      { title: "Ассистент 1", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[0] },
+      { title: "Ассистент 2", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[1] },
+      { title: "Ассистент 3", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[2] },
+    ];
+  }
+
+  // =========================
   // Events
   // =========================
 
@@ -820,6 +1028,49 @@
       chatInputEl.value = "";
       sendChatMessage(v).catch((err) => setChatStatus(`Ошибка: ${err.message}`));
     });
+
+    // Обработчик кнопок онбординга
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-demo-topic]");
+      if (!btn) return;
+      e.preventDefault();
+      openDemoChat(btn.getAttribute("data-demo-topic"));
+    });
+
+    // Обработчик навигации deck-карточек
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "cardsNextBtn") {
+        e.preventDefault();
+        cardsGoNext();
+      }
+      if (e.target.id === "cardsPrevBtn") {
+        e.preventDefault();
+        // Если это первая карточка, возвращаемся назад
+        if (state.cards.index === 0) {
+          cardsClose();
+        } else {
+          cardsGoPrev();
+        }
+      }
+    });
+
+    // Делегирование событий для data-open-cards (дополнительная поддержка)
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-open-cards]");
+      if (!btn) return;
+      
+      const deckId = btn.getAttribute("data-open-cards");
+      if (!deckId) return;
+
+      const cardsList = buildCardsForDeck(deckId);
+      if (cardsList && cardsList.length > 0) {
+        e.preventDefault();
+        // Определяем sectionKey из deckId для возврата
+        const parts = deckId.split("-");
+        const sectionKey = parts[0] || "pregnancy";
+        openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+      }
+    });
   }
 
   // Boot
@@ -830,7 +1081,13 @@
     }
     renderAssistants();
     wireEvents();
-    setActiveScreen("home");
+    
+    // Показываем онбординг, если пользователь еще не прошел его
+    if (!state.onboarded) {
+      showScreen("screen-onboarding");
+    } else {
+      setActiveScreen("home");
+    }
   }
 
   boot();

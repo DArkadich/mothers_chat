@@ -15,6 +15,56 @@
 
   <div class="app" id="appRoot">
 
+    <!-- ============ ONBOARDING (показывается при первом заходе) ============ -->
+    <section id="screen-onboarding" class="screen">
+      <main class="onb">
+        <img class="onb__girl" src="/app/bg-hero.png" alt="" decoding="async" />
+
+        <header class="onb__head">
+          <div class="onb__brand">
+            <span class="onb__name">MAMIN</span>
+            <img class="onb__mark" src="/app/logo-mamino.png" alt="" />
+          </div>
+          <div class="onb__tagline">помощь маме, которая<br>всегда под рукой</div>
+        </header>
+
+        <section class="onb__card">
+          <p>Мы собрали лучших AI-ассистентов для мам: от беременности до подростков.</p>
+          <p>Они помогают, подсказывают, успокаивают и делают твою рутину легче.</p>
+        </section>
+
+        <section class="onb__cta">
+          <h2>ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?</h2>
+          <div class="onb__grid">
+            <button class="pill" data-demo-topic="sleep">сон младенца</button>
+            <button class="pill" data-demo-topic="colic">колики</button>
+            <button class="pill" data-demo-topic="crisis3">кризис 3х лет</button>
+            <button class="pill" data-demo-topic="talk">хочу поговорить</button>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <!-- ============ CARDS SCREEN (deck) ============ -->
+    <section id="screen-cards" class="screen">
+      <div class="deck">
+        <div class="card next" id="cardsNext" aria-hidden="true"></div>
+
+        <article class="card front" id="cardsFront">
+          <header class="card__header">
+            <div class="brand">MAMIN</div>
+            <h1 class="title" id="cardsTitle"></h1>
+          </header>
+          <div class="card__body" id="cardsBody"></div>
+
+          <div class="cardsNav">
+            <button class="pill" id="cardsPrevBtn">назад</button>
+            <button class="pill" id="cardsNextBtn">дальше</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <!-- ============ HOME (показывается при первом заходе) ============ -->
     <main id="screen-home" class="screen screen--active">
       <header class="header">
@@ -113,7 +163,7 @@
 
 
     <!-- ============ TABBAR (иконки заказчика) ============ -->
-    <nav class="tabbar" aria-label="Навигация">
+    <nav class="tabbar" id="tabbar" aria-label="Навигация">
       <button class="tabbar__btn tabbar__btn--active" id="tabAssistants" type="button">
         <img class="tabbar__icon" src="/app/Icons/Assist.svg" alt="" />
         <span class="tabbar__txt">ассистенты</span>
