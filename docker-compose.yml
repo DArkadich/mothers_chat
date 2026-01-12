@@ -37,7 +37,7 @@ services:
       # Включить тестовый фейковый OpenAI: 1 — включено (dev/CI), 0 — выключено (prod)
       ENABLE_FAKE_OPENAI: "${ENABLE_FAKE_OPENAI:-0}"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
 
 volumes:
   motherschat_db_data:
