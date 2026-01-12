@@ -233,7 +233,9 @@ def create_chat_session(
     - `init_data` от Telegram WebApp — предпочтительно и безопасно (сервер верифицирует подпись).
     """
     # 1) ассистент должен существовать
-    assistant = db.query(Assistant).filter(Assistant.code == payload.assistant_slug).first()
+    assistant = db.query(Assistant).filter(
+        or_(Assistant.code == payload.assistant_slug, Assistant.slug == payload.assistant_slug)
+    ).first()
     if not assistant:
         raise HTTPException(status_code=404, detail="Assistant not found")
 
@@ -290,7 +292,9 @@ def send_chat_message(
     current_user: Any = Depends(get_current_user_optional),
 ):
     # ассистент
-    assistant = db.query(Assistant).filter(Assistant.code == payload.assistant_slug).first()
+    assistant = db.query(Assistant).filter(
+        or_(Assistant.code == payload.assistant_slug, Assistant.slug == payload.assistant_slug)
+    ).first()
     if not assistant:
         raise HTTPException(status_code=404, detail="Assistant not found")
 
