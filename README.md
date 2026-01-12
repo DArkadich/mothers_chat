@@ -102,14 +102,48 @@ Smoke-скрипт автоматически:
 ## Структура проекта
 
 ```
-backend/
-  ├── app/              # Основное приложение FastAPI
-  ├── core/             # Ядро (limiter, telegram_auth)
-  ├── models.py         # SQLAlchemy модели
-  ├── main_newold.py    # Основной файл API (текущий)
-  ├── alembic/          # Миграции БД
-  └── tests/            # Тесты
-
-frontend/app/           # Frontend (HTML/CSS/JS)
-scripts/                # Скрипты для CI/CD и деплоя
+MothersChat/
+├── backend/                    # Backend (FastAPI)
+│   ├── app/                   # Основное приложение
+│   │   ├── main.py            # FastAPI приложение
+│   │   ├── db.py              # Настройка БД
+│   │   └── models/            # Модели SQLAlchemy
+│   │       ├── assistant.py
+│   │       ├── chat.py
+│   │       └── user.py
+│   ├── core/                  # Ядро приложения
+│   │   ├── limiter.py         # Rate limiting
+│   │   └── telegram_auth.py  # Telegram WebApp аутентификация
+│   ├── alembic/               # Миграции БД
+│   │   ├── versions/          # Файлы миграций
+│   │   └── env.py
+│   ├── tests/                 # Тесты backend
+│   │   └── test_chat.py
+│   ├── models.py              # Модели (legacy, используется в миграциях)
+│   ├── main_newold.py         # Основной файл API (текущий)
+│   └── main.py                # Альтернативный файл API
+│
+├── frontend/app/              # Frontend (Telegram WebApp)
+│   ├── index.html             # Главная страница
+│   ├── main.js                # Основная логика
+│   ├── styles.css             # Стили
+│   └── [assets]               # Изображения и иконки
+│
+├── scripts/                   # Скрипты для CI/CD и деплоя
+│   ├── smoke_compose_check.sh # Smoke-тесты
+│   └── deploy_remote.sh       # Деплой на сервер
+│
+├── tests/                     # Общие тесты
+│   ├── test_limits.py
+│   └── test_telegram_auth.py
+│
+├── .github/workflows/         # GitHub Actions CI/CD
+│   └── ci.yml
+│
+├── docker-compose.yml         # Docker Compose конфигурация
+├── Dockerfile                 # Docker образ для backend
+├── requirements.txt           # Python зависимости
+├── conftest.py               # Pytest конфигурация
+├── README.md                 # Этот файл
+└── CONTRIBUTING.md           # Правила разработки
 ```
