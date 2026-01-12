@@ -10,8 +10,12 @@
       if (!tg) return;
       tg.ready();
       tg.expand();
-      tg.setHeaderColor && tg.setHeaderColor("#f7f5ef");
-      tg.setBackgroundColor && tg.setBackgroundColor("#f7f5ef");
+      try {
+        if (tg.setHeaderColor) tg.setHeaderColor("#f7f5ef");
+      } catch {}
+      try {
+        if (tg.setBackgroundColor) tg.setBackgroundColor("#f7f5ef");
+      } catch {}
     } catch (e) {
       console.warn("[mamino] Telegram init warning:", e);
     }
@@ -294,6 +298,16 @@
     }
   }
 
+  // Dev fallback: если initData пустой, используем telegram_id="1" для разработки
+  function getAuthPayload() {
+    const initData = getInitData();
+    if (initData) {
+      return { init_data: initData };
+    }
+    console.warn("[mamino] initData empty -> dev fallback telegram_id=1");
+    return { telegram_id: "1" }; // строкой, как требует API
+  }
+
   function sessionStorageKey(assistantSlug) {
     return `mamino_session_${assistantSlug}`;
   }
@@ -372,15 +386,10 @@
     const cached = localStorage.getItem(sessionStorageKey(assistantSlug));
     if (cached && cached.length > 0) return cached;
 
-    const initData = getInitData();
-    if (!initData) {
-      // Важно: не используем initDataUnsafe как источник доверия.
-      throw new Error("Открой мини-приложение внутри Telegram (initData недоступен).");
-    }
-
+    const auth = getAuthPayload();
     const data = await apiPost("/chat/session", {
       assistant_slug: assistantSlug,
-      init_data: initData
+      ...auth
     });
 
     if (!data || !data.session_id) throw new Error("Backend не вернул session_id");
