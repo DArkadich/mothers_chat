@@ -320,20 +320,45 @@
     try { return JSON.stringify(err); } catch { return String(err); }
   }
 
-  async function apiPost(path, payload) {
-    const r = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+  // Правильная обёртка для fetch, которая всегда бросает строку
+  async function apiFetch(path, { method = "POST", headers = {}, body } = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: { "Content-Type": "application/json", ...headers },
+      body: body ? JSON.stringify(body) : undefined,
     });
-    const text = await r.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-    if (!r.ok) {
-      const msg = (data && (data.detail || data.error)) ? (data.detail || data.error) : `HTTP ${r.status}`;
-      throw new Error(msg);
+
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+
+    const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => "");
+
+    if (!res.ok) {
+      // приводим любую ошибку к строке
+      let msg = "";
+      if (typeof payload === "string") {
+        msg = payload;
+      } else if (payload && typeof payload === "object") {
+        // FastAPI обычно возвращает {detail: ...}
+        if (typeof payload.detail === "string") {
+          msg = payload.detail;
+        } else if (payload.detail) {
+          msg = JSON.stringify(payload.detail);
+        } else {
+          msg = JSON.stringify(payload);
+        }
+      } else {
+        msg = `HTTP ${res.status}`;
+      }
+      throw new Error(msg || `HTTP ${res.status}`);
     }
-    return data;
+
+    return payload;
+  }
+
+  // Старая функция для обратной совместимости (использует apiFetch)
+  async function apiPost(path, payload) {
+    return apiFetch(path, { method: "POST", body: payload });
   }
 
   function setChatStatus(msg, opts) {
@@ -464,25 +489,34 @@
     appendChatBubble("user", text);
     setChatStatus("Ассистент думает…");
 
-    const data = await apiPost("/chat/send", {
-      session_id: activeSessionId,
-      assistant_slug: activeAssistantSlug,
-      message: text
-    });
+    try {
+      const data = await apiPost("/chat/send", {
+        session_id: activeSessionId,
+        assistant_slug: activeAssistantSlug,
+        message: text
+      });
 
-    setChatStatus("");
+      setChatStatus("");
 
-    // Источник истины — история с backend
-    if (Array.isArray(data?.messages)) {
-      renderChatHistory(data.messages);
-      return;
-    }
+      // Источник истины — история с backend
+      if (Array.isArray(data?.messages)) {
+        renderChatHistory(data.messages);
+        return;
+      }
 
-    const reply = data?.reply;
-    if (typeof reply === "string" && reply.length > 0) {
-      appendChatBubble("assistant", reply);
-    } else {
-      setChatStatus("Ошибка: пустой ответ модели");
+      const reply = data?.reply;
+      if (typeof reply === "string" && reply.length > 0) {
+        appendChatBubble("assistant", reply);
+      } else {
+        setChatStatus("Ошибка: пустой ответ модели");
+      }
+    } catch (err) {
+      // Диагностика ошибки
+      console.log("[Mamino] RAW ERROR:", err);
+      console.log("[Mamino] typeof err:", typeof err);
+      console.log("[Mamino] keys:", err && typeof err === "object" ? Object.keys(err) : null);
+      
+      setChatStatus(`Ошибка: ${formatError(err)}`);
     }
   }
 
