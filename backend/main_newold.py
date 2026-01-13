@@ -22,6 +22,7 @@ from sqlalchemy import Integer
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, Session
 
 from openai import OpenAI
+from backend.app.ai.client import OpenAIClient
 
 # =========================
 # Настройки и инициализация
@@ -35,39 +36,16 @@ DATABASE_URL = os.getenv(
 )
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")  # можно поменять на то, что вы выбрали
+OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
+ENABLE_FAKE_OPENAI = os.getenv("ENABLE_FAKE_OPENAI", "0") == "1"
 
-# Инициализация клиента OpenAI: не падаем при импорте — если ключ не задан или
-# инициализация не удалась, оставляем `openai_client = None` и проверяем при вызове.
+# Инициализация клиента OpenAI
 openai_client = None
-if OPENAI_API_KEY:
+if OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
     try:
-        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        openai_client = OpenAIClient(api_key=OPENAI_API_KEY, model=OPENAI_MODEL)
     except Exception:
-        # Если инициализация не удалась (несовместимость библиотек в окружении),
-        # оставляем клиента пустым и обработаем это в рантайме.
         openai_client = None
-
-# Режим разработки: при необходимости можно включить fake OpenAI для smoke-тестов
-# (полезно на dev/CI, когда реальный ключ недоступен).
-if os.getenv("ENABLE_FAKE_OPENAI", "0") == "1":
-    class FakeOpenAI:
-        class chat:
-            class completions:
-                @staticmethod
-                def create(model, messages):
-                    class MessageObj:
-                        content = "Hello from fake model"
-
-                    class ChoiceObj:
-                        message = MessageObj()
-
-                    class CompletionObj:
-                        choices = [ChoiceObj()]
-
-                    return CompletionObj()
-
-    openai_client = FakeOpenAI()
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -314,14 +292,55 @@ def send_chat_message(
         if cur_tid != str(session_user.telegram_id):
             raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
 
-    # Заглушка ответа (тесту важно только наличие reply и messages)
-    import os
-    reply = os.getenv("FAKE_REPLY", "Hello from fake model")
+    # Получаем историю сообщений (без system_prompt)
+    history_messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == sess.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
     
-    messages = [
-        {"role": "user", "content": payload.message},
-        {"role": "assistant", "content": reply},
+    history = [
+        {"role": msg.role, "content": msg.content}
+        for msg in history_messages
+        if msg.role in ("user", "assistant")
     ]
+    
+    # Добавляем текущее сообщение пользователя
+    history.append({"role": "user", "content": payload.message})
+    
+    # Сохраняем сообщение пользователя в БД
+    user_msg = ChatMessage(
+        session_id=sess.id,
+        role="user",
+        content=payload.message
+    )
+    db.add(user_msg)
+    db.commit()
+
+    # Переключатель fake / real (одна точка входа)
+    if ENABLE_FAKE_OPENAI:
+        reply = os.getenv("FAKE_REPLY", "Hello from fake model")
+    else:
+        if not openai_client:
+            raise HTTPException(status_code=500, detail="OpenAI client is not configured")
+        reply = openai_client.chat(
+            system_prompt=assistant.system_prompt,
+            messages=history,
+        )
+    
+    # Сохраняем ответ ассистента в БД
+    assistant_msg = ChatMessage(
+        session_id=sess.id,
+        role="assistant",
+        content=reply
+    )
+    db.add(assistant_msg)
+    db.commit()
+    
+    # Формируем ответ с историей (включая новый ответ)
+    messages = history + [{"role": "assistant", "content": reply}]
+    
     return {"reply": reply, "messages": messages}
 
 
