@@ -268,6 +268,8 @@ def create_chat_session(
 
 class ChatHistoryRequest(BaseModel):
     session_id: int
+    init_data: Optional[str] = Field(None, description="Telegram WebApp initData string. Server will validate signature and extract user.id as telegram_id.")
+    telegram_id: Optional[str] = Field(None, examples=["123456789"])
 
 
 @app.post("/api/chat/history", response_model=None)
@@ -277,24 +279,63 @@ def get_chat_history(
 ):
     """
     Получение истории сообщений по session_id (без system).
+    Требует авторизации: сессия должна принадлежать текущему пользователю.
     """
-    sess = db.query(ChatSession).filter(ChatSession.id == payload.session_id).first()
+    # 1) Определить пользователя (та же логика, что в create_chat_session
+    telegram_id: Optional[str] = None
+
+    if payload.init_data:
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not bot_token:
+            raise HTTPException(status_code=500, detail="TELEGRAM_BOT_TOKEN is not set")
+
+        from backend.core.telegram_auth import validate_init_data
+
+        data = validate_init_data(payload.init_data, bot_token)
+
+        user_obj = data.get("user")
+        if isinstance(user_obj, str):
+            user_obj = json.loads(user_obj)
+
+        if not isinstance(user_obj, dict) or "id" not in user_obj:
+            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+
+        telegram_id = str(user_obj["id"])
+
+    elif payload.telegram_id:
+        telegram_id = str(payload.telegram_id)
+
+    else:
+        raise HTTPException(status_code=400, detail="telegram_id or init_data is required")
+
+    # 2) Найти пользователя
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 3) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
+    sess = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == payload.session_id, ChatSession.user_id == user.id)
+        .first()
+    )
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    # 4) Получить историю сообщений (без system)
     history_messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.session_id == sess.id)
-        .order_by(ChatMessage.created_at)
+        .order_by(ChatMessage.created_at.asc(), ChatMessage.id.asc())
         .all()
     )
 
     messages = [
-        ChatMessageDTO(
-            role=msg.role,
-            content=msg.content,
-            created_at=msg.created_at.isoformat() if msg.created_at else "",
-        )
+        {
+            "role": msg.role,
+            "content": msg.content,
+            "created_at": msg.created_at.isoformat() if msg.created_at else None,
+        }
         for msg in history_messages
         if msg.role in ("user", "assistant")
     ]

@@ -388,7 +388,14 @@
 
   async function loadChatHistory(sessionId) {
     try {
-      const data = await apiFetch("/chat/history", { method: "POST", body: { session_id: sessionId } });
+      const auth = getAuthPayload();
+      const data = await apiFetch("/chat/history", {
+        method: "POST",
+        body: {
+          session_id: sessionId,
+          ...auth
+        }
+      });
       const msgs = data?.messages;
       return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
@@ -1128,10 +1135,15 @@
   // Boot
   function boot() {
     setupTelegramUi();
-    // Предупреждение только если Telegram WebApp доступен, но initData пустой
+    // Предупреждение о пустом initData: в dev - info, в prod - warn
     if (tg && !getInitData()) {
-      // В dev режиме это нормально, не логируем как ошибку
-      // console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
+      // Проверяем, открыто ли в Telegram (если tg доступен, но initData нет - вероятно dev)
+      const isDev = !window.location.hostname.includes("mamino.online") || window.location.hostname === "localhost";
+      if (isDev) {
+        console.info("[mamino] initData пустой: dev режим, используется fallback telegram_id=1");
+      } else {
+        console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
+      }
     }
     renderAssistants();
     wireEvents();
