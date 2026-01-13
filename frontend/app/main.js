@@ -453,7 +453,7 @@
 
           return;
         }
-        setChatStatus(`Ошибка: ${m}`);
+        setChatStatus(`Ошибка: ${formatError(e)}`);
       });
   }
 
