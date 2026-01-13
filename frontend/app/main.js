@@ -388,11 +388,12 @@
 
   async function loadChatHistory(sessionId) {
     try {
-      const data = await apiPost("/chat/history", { session_id: sessionId });
+      const data = await apiFetch("/chat/history", { method: "POST", body: { session_id: sessionId } });
       const msgs = data?.messages;
       return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
-      console.warn("[mamino] history unavailable:", e);
+      // История недоступна (404 или другая ошибка) - не критично, просто возвращаем пустой массив
+      console.warn("[mamino] history unavailable:", e?.message || String(e));
       return [];
     }
   }
@@ -1127,8 +1128,10 @@
   // Boot
   function boot() {
     setupTelegramUi();
+    // Предупреждение только если Telegram WebApp доступен, но initData пустой
     if (tg && !getInitData()) {
-      console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
+      // В dev режиме это нормально, не логируем как ошибку
+      // console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
     }
     renderAssistants();
     wireEvents();
