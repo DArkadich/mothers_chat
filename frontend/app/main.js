@@ -1077,7 +1077,7 @@
       const v = (chatInputEl?.value || "").trim();
       if (!v) return;
       chatInputEl.value = "";
-      sendChatMessage(v).catch((err) => setChatStatus(`Ошибка: ${formatError(err)}`));
+      sendChatMessage(v); // ошибки обрабатываются внутри sendChatMessage
     });
 
     // Обработчик кнопок онбординга
