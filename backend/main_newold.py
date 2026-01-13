@@ -42,10 +42,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
 ENABLE_FAKE_OPENAI = env_bool("ENABLE_FAKE_OPENAI", "0")
 
-# Проверка: нужен либо API ключ, либо fake режим
-if not OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
-    raise RuntimeError("OpenAI API key is not set")
-
 # Инициализация клиента OpenAI
 openai_client = None
 if OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
@@ -330,6 +326,9 @@ def send_chat_message(
         FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
         reply = FAKE_REPLY
     else:
+        # Проверка: нужен либо API ключ, либо fake режим (при использовании)
+        if not OPENAI_API_KEY:
+            raise HTTPException(status_code=500, detail="OpenAI API key is not set")
         if not openai_client:
             raise HTTPException(status_code=500, detail="OpenAI client is not configured")
         reply = openai_client.chat(
