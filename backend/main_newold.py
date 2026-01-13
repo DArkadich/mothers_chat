@@ -266,6 +266,42 @@ def create_chat_session(
     return {"session_id": sess.id}
 
 
+class ChatHistoryRequest(BaseModel):
+    session_id: int
+
+
+@app.post("/api/chat/history", response_model=None)
+def get_chat_history(
+    payload: ChatHistoryRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Получение истории сообщений по session_id (без system).
+    """
+    sess = db.query(ChatSession).filter(ChatSession.id == payload.session_id).first()
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    history_messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == sess.id)
+        .order_by(ChatMessage.created_at)
+        .all()
+    )
+
+    messages = [
+        ChatMessageDTO(
+            role=msg.role,
+            content=msg.content,
+            created_at=msg.created_at.isoformat() if msg.created_at else "",
+        )
+        for msg in history_messages
+        if msg.role in ("user", "assistant")
+    ]
+
+    return {"messages": messages}
+
+
 @app.post("/api/chat/send", response_model=None, dependencies=[Depends(rate_limit_dep)])
 def send_chat_message(
     payload: ChatSendRequest,
@@ -326,7 +362,7 @@ def send_chat_message(
         FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
         reply = FAKE_REPLY
     else:
-        # Проверка: нужен либо API ключ, либо fake режим (при использовании)
+        # Проверка: нужен API ключ (только если не fake режим)
         if not OPENAI_API_KEY:
             raise HTTPException(status_code=500, detail="OpenAI API key is not set")
         if not openai_client:
