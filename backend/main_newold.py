@@ -39,6 +39,10 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
 ENABLE_FAKE_OPENAI = os.getenv("ENABLE_FAKE_OPENAI", "0") == "1"
 
+# Проверка: нужен либо API ключ, либо fake режим
+if not OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
+    raise RuntimeError("OpenAI API key is not set")
+
 # Инициализация клиента OpenAI
 openai_client = None
 if OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
