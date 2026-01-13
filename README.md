@@ -12,6 +12,13 @@ Telegram Mini App с AI-ассистентами для мам. Короткая
 docker compose up -d --build
 ```
 
+- Поднять сервис с реальным OpenAI (требует OPENAI_API_KEY):
+
+```bash
+OPENAI_API_KEY=your_key_here docker compose up -d --build
+# или создать .env файл с OPENAI_API_KEY=your_key_here
+```
+
 - Полный прогон smoke (использует фейковый OpenAI):
 
 ```bash
@@ -39,13 +46,15 @@ docker compose exec backend sh -c 'cd backend && alembic current'
 
 ## Переменные окружения (важные) 🔧
 
-- `OPENAI_API_KEY` — ключ OpenAI (если используется настоящий OpenAI)
+- `OPENAI_API_KEY` — **обязательно** для использования реального OpenAI (без него будет ошибка, если `ENABLE_FAKE_OPENAI=0`)
 - `DATABASE_URL` — URL БД (по умолчанию: `postgresql+psycopg2://motherschat:motherschat_password@db:5432/motherschat`)
 - `FRONTEND_ORIGIN` — origin фронтенда для CORS (по умолчанию: `https://mamino.online`)
-- `ENABLE_FAKE_OPENAI` — когда `1` используется встроенный фейк (для smoke/CI)
+- `ENABLE_FAKE_OPENAI` — когда `1` используется встроенный фейк (для smoke/CI), по умолчанию `0` (реальный OpenAI)
 - `DEFAULT_MODEL` — модель по умолчанию (по умолчанию: `gpt-4.1-mini`)
 - `TELEGRAM_BOT_TOKEN` — (рекомендуется) токен бота для верификации `initData` от Telegram WebApp
 - `FAKE_REPLY` — текст ответа для фейкового OpenAI (по умолчанию: `"Hello from fake model"`)
+
+> **Важно:** По умолчанию `ENABLE_FAKE_OPENAI=0`, поэтому для работы приложения необходимо установить `OPENAI_API_KEY`. Для тестов и CI используйте `ENABLE_FAKE_OPENAI=1`.
 
 > **API:** `POST /api/chat/session` принимает `init_data` (предпочтительно) или `telegram_id`. Сервер проверит подпись `init_data` и извлечёт `user.id` (telegram_id). Если `init_data` отсутствует, `telegram_id` по-прежнему работает (удобно для локалки).
 
