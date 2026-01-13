@@ -35,9 +35,12 @@ DATABASE_URL = os.getenv(
     "sqlite:///:memory:",
 )
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+def env_bool(name: str, default: str = "0") -> bool:
+    return os.getenv(name, default).strip().lower() in ("1", "true", "yes", "on")
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
-ENABLE_FAKE_OPENAI = os.getenv("ENABLE_FAKE_OPENAI", "0") == "1"
+ENABLE_FAKE_OPENAI = env_bool("ENABLE_FAKE_OPENAI", "0")
 
 # Проверка: нужен либо API ключ, либо fake режим
 if not OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
@@ -324,7 +327,8 @@ def send_chat_message(
 
     # Переключатель fake / real (одна точка входа)
     if ENABLE_FAKE_OPENAI:
-        reply = os.getenv("FAKE_REPLY", "Hello from fake model")
+        FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
+        reply = FAKE_REPLY
     else:
         if not openai_client:
             raise HTTPException(status_code=500, detail="OpenAI client is not configured")

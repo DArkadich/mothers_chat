@@ -312,6 +312,14 @@
     return `mamino_session_${assistantSlug}`;
   }
 
+  function formatError(err) {
+    if (!err) return "Неизвестная ошибка";
+    if (typeof err === "string") return err;
+    if (err.detail) return typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail);
+    if (err.message) return err.message;
+    try { return JSON.stringify(err); } catch { return String(err); }
+  }
+
   async function apiPost(path, payload) {
     const r = await fetch(`${API_BASE}${path}`, {
       method: "POST",
@@ -1035,7 +1043,7 @@
       const v = (chatInputEl?.value || "").trim();
       if (!v) return;
       chatInputEl.value = "";
-      sendChatMessage(v).catch((err) => setChatStatus(`Ошибка: ${err.message}`));
+      sendChatMessage(v).catch((err) => setChatStatus(`Ошибка: ${formatError(err)}`));
     });
 
     // Обработчик кнопок онбординга
