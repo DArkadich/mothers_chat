@@ -405,15 +405,19 @@ def send_chat_message(
     db.commit()
 
     # Переключатель fake / real (одна точка входа)
-    if ENABLE_FAKE_OPENAI:
+    # Читаем переменную заново при каждом запросе (на случай изменения в runtime)
+    current_fake_mode = env_bool("ENABLE_FAKE_OPENAI", "0")
+    if current_fake_mode:
         FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
         reply = FAKE_REPLY
+        logger.info(f"[Chat] Using FAKE mode (ENABLE_FAKE_OPENAI={current_fake_mode})")
     else:
         # Проверка: нужен API ключ (только если не fake режим)
         if not OPENAI_API_KEY:
             raise HTTPException(status_code=500, detail="OpenAI API key is not set")
         if not openai_client:
             raise HTTPException(status_code=500, detail="OpenAI client is not configured")
+        logger.info(f"[Chat] Using REAL OpenAI (ENABLE_FAKE_OPENAI={current_fake_mode}, client={'OK' if openai_client else 'NULL'})")
         reply = openai_client.chat(
             system_prompt=assistant.system_prompt,
             messages=history,
