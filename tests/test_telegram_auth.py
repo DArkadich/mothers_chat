@@ -52,14 +52,8 @@ def db_session():
 def client(db_session, monkeypatch):
     # Устанавливаем fake режим для всех тестов
     monkeypatch.setenv("ENABLE_FAKE_OPENAI", "1")
-    # Перезагружаем модуль чтобы применить изменения
-    import importlib
-    importlib.reload(app_mod)
-    # Обновляем ссылки после перезагрузки
-    global app, get_db, get_current_user_optional
-    app = getattr(app_mod, "app")
-    get_db = getattr(app_mod, "get_db")
-    get_current_user_optional = getattr(app_mod, "get_current_user_optional")
+    # Обновляем переменную в модуле (env_bool читает os.getenv каждый раз)
+    app_mod.ENABLE_FAKE_OPENAI = app_mod.env_bool("ENABLE_FAKE_OPENAI", "0")
     
     # Override get_db
     def _override_get_db():
