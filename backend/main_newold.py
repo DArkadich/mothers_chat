@@ -42,6 +42,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
 ENABLE_FAKE_OPENAI = env_bool("ENABLE_FAKE_OPENAI", "0")
 
+# Диагностика (можно убрать после проверки)
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.info(f"[Config] ENABLE_FAKE_OPENAI={ENABLE_FAKE_OPENAI}, OPENAI_API_KEY={'***' if OPENAI_API_KEY else 'NOT SET'}")
+
 # Инициализация клиента OpenAI
 openai_client = None
 if OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
