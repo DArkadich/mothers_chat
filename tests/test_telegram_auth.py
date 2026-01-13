@@ -49,7 +49,13 @@ def db_session():
 
 
 @pytest.fixture()
-def client(db_session):
+def client(db_session, monkeypatch):
+    # Устанавливаем fake режим для всех тестов
+    monkeypatch.setenv("ENABLE_FAKE_OPENAI", "1")
+    # Перезагружаем модуль чтобы применить изменения
+    import importlib
+    importlib.reload(app_mod)
+    
     # Override get_db
     def _override_get_db():
         try:

@@ -31,6 +31,12 @@ def setup_db():
 
 
 def test_create_session_and_send_message(monkeypatch):
+    # Устанавливаем fake режим для теста
+    monkeypatch.setenv("ENABLE_FAKE_OPENAI", "1")
+    # Обновляем переменную в модуле
+    import importlib
+    importlib.reload(appmod)
+    
     # create assistant in DB
     db = appmod.SessionLocal()
     assistant = appmod.Assistant(code="testassistant", title="Test", system_prompt="You are helpful")
