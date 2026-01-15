@@ -333,7 +333,7 @@
   // Dev fallback: если initData пустой, используем telegram_id="1" для разработки
   function getAuthPayload() {
     const initData = getInitData();
-    const unsafeId = getTelegramId();
+    const unsafeId = getTelegramUserId();
     if (initData) {
       return unsafeId ? { init_data: initData, telegram_id: unsafeId } : { init_data: initData };
     }
