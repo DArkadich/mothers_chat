@@ -1,6 +1,7 @@
 import os
 import uuid
 import json
+from urllib.parse import parse_qsl
 from datetime import datetime
 from typing import List, Literal, Optional, Any
 
@@ -268,10 +269,27 @@ def create_chat_session(
                 exc.detail,
                 len(payload.init_data) if payload.init_data else 0,
             )
-            if payload.telegram_id and ALLOW_UNSAFE_TELEGRAM_ID:
-                logger.info("[ChatSession] fallback to telegram_id (unsafe) enabled")
-                telegram_id = str(payload.telegram_id)
-                data = None
+            if ALLOW_UNSAFE_TELEGRAM_ID:
+                logger.info("[ChatSession] unsafe fallback enabled, parsing init_data")
+                try:
+                    raw = dict(parse_qsl(payload.init_data.replace("\n", "&"), keep_blank_values=True))
+                    user_raw = raw.get("user")
+                    if user_raw:
+                        user_obj = json.loads(user_raw)
+                        uid = user_obj.get("id")
+                        if uid is not None:
+                            telegram_id = str(uid)
+                            data = None
+                        else:
+                            raise ValueError("user.id missing")
+                    elif payload.telegram_id:
+                        telegram_id = str(payload.telegram_id)
+                        data = None
+                    else:
+                        raise ValueError("user missing")
+                except Exception as unsafe_exc:
+                    logger.info("[ChatSession] unsafe fallback failed: %s", unsafe_exc)
+                    raise
             else:
                 raise
 
@@ -342,10 +360,27 @@ def get_chat_history(
                 exc.detail,
                 len(payload.init_data) if payload.init_data else 0,
             )
-            if payload.telegram_id and ALLOW_UNSAFE_TELEGRAM_ID:
-                logger.info("[ChatHistory] fallback to telegram_id (unsafe) enabled")
-                telegram_id = str(payload.telegram_id)
-                data = None
+            if ALLOW_UNSAFE_TELEGRAM_ID:
+                logger.info("[ChatHistory] unsafe fallback enabled, parsing init_data")
+                try:
+                    raw = dict(parse_qsl(payload.init_data.replace("\n", "&"), keep_blank_values=True))
+                    user_raw = raw.get("user")
+                    if user_raw:
+                        user_obj = json.loads(user_raw)
+                        uid = user_obj.get("id")
+                        if uid is not None:
+                            telegram_id = str(uid)
+                            data = None
+                        else:
+                            raise ValueError("user.id missing")
+                    elif payload.telegram_id:
+                        telegram_id = str(payload.telegram_id)
+                        data = None
+                    else:
+                        raise ValueError("user missing")
+                except Exception as unsafe_exc:
+                    logger.info("[ChatHistory] unsafe fallback failed: %s", unsafe_exc)
+                    raise
             else:
                 raise
 
