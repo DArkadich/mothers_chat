@@ -43,12 +43,18 @@ def env_bool(name: str, default: str = "0") -> bool:
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-mini")
 ENABLE_FAKE_OPENAI = env_bool("ENABLE_FAKE_OPENAI", "0")
+ALLOW_UNSAFE_TELEGRAM_ID = env_bool("ALLOW_UNSAFE_TELEGRAM_ID", "0")
 
 # Диагностика (можно убрать после проверки)
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.info(f"[Config] ENABLE_FAKE_OPENAI={ENABLE_FAKE_OPENAI}, OPENAI_API_KEY={'***' if OPENAI_API_KEY else 'NOT SET'}")
+logger.info(
+    "[Config] ENABLE_FAKE_OPENAI=%s, ALLOW_UNSAFE_TELEGRAM_ID=%s, OPENAI_API_KEY=%s",
+    ENABLE_FAKE_OPENAI,
+    ALLOW_UNSAFE_TELEGRAM_ID,
+    "***" if OPENAI_API_KEY else "NOT SET",
+)
 
 # Инициализация клиента OpenAI
 openai_client = None
@@ -262,17 +268,23 @@ def create_chat_session(
                 exc.detail,
                 len(payload.init_data) if payload.init_data else 0,
             )
-            raise
+            if payload.telegram_id and ALLOW_UNSAFE_TELEGRAM_ID:
+                logger.info("[ChatSession] fallback to telegram_id (unsafe) enabled")
+                telegram_id = str(payload.telegram_id)
+                data = None
+            else:
+                raise
 
-        user_obj = data.get("user")
-        if isinstance(user_obj, str):
-            # иногда user приходит JSON-строкой
-            user_obj = json.loads(user_obj)
+        if data is not None:
+            user_obj = data.get("user")
+            if isinstance(user_obj, str):
+                # иногда user приходит JSON-строкой
+                user_obj = json.loads(user_obj)
 
-        if not isinstance(user_obj, dict) or "id" not in user_obj:
-            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+            if not isinstance(user_obj, dict) or "id" not in user_obj:
+                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
 
-        telegram_id = str(user_obj["id"])
+            telegram_id = str(user_obj["id"])
 
     elif payload.telegram_id:
         telegram_id = str(payload.telegram_id)
@@ -322,16 +334,30 @@ def get_chat_history(
 
         from backend.core.telegram_auth import validate_init_data
 
-        data = validate_init_data(payload.init_data, bot_token)
+        try:
+            data = validate_init_data(payload.init_data, bot_token)
+        except HTTPException as exc:
+            logger.info(
+                "[ChatHistory] init_data validation failed: detail=%s init_data_len=%s",
+                exc.detail,
+                len(payload.init_data) if payload.init_data else 0,
+            )
+            if payload.telegram_id and ALLOW_UNSAFE_TELEGRAM_ID:
+                logger.info("[ChatHistory] fallback to telegram_id (unsafe) enabled")
+                telegram_id = str(payload.telegram_id)
+                data = None
+            else:
+                raise
 
-        user_obj = data.get("user")
-        if isinstance(user_obj, str):
-            user_obj = json.loads(user_obj)
+        if data is not None:
+            user_obj = data.get("user")
+            if isinstance(user_obj, str):
+                user_obj = json.loads(user_obj)
 
-        if not isinstance(user_obj, dict) or "id" not in user_obj:
-            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+            if not isinstance(user_obj, dict) or "id" not in user_obj:
+                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
 
-        telegram_id = str(user_obj["id"])
+            telegram_id = str(user_obj["id"])
 
     elif payload.telegram_id:
         telegram_id = str(payload.telegram_id)

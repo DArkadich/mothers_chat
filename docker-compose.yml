@@ -34,6 +34,8 @@ services:
       RATE_LIMIT_PER_MINUTE: "${RATE_LIMIT_PER_MINUTE:-120}"
       # Включить тестовый фейковый OpenAI: 1 — включено (dev/CI), 0 — выключено (prod)
       ENABLE_FAKE_OPENAI: "${ENABLE_FAKE_OPENAI:-0}"
+      # Разрешить fallback на telegram_id при ошибке init_data (временно, диагностически)
+      ALLOW_UNSAFE_TELEGRAM_ID: "${ALLOW_UNSAFE_TELEGRAM_ID:-0}"
       # Для использования реального OpenAI установите OPENAI_API_KEY в переменных окружения или .env
     ports:
       - "127.0.0.1:8000:8000"

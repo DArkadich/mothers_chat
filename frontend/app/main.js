@@ -301,10 +301,10 @@
   // Dev fallback: если initData пустой, используем telegram_id="1" для разработки
   function getAuthPayload() {
     const initData = getInitData();
-    if (initData) {
-      return { init_data: initData };
-    }
     const unsafeId = getTelegramId();
+    if (initData) {
+      return unsafeId ? { init_data: initData, telegram_id: unsafeId } : { init_data: initData };
+    }
     if (unsafeId) {
       console.info("[mamino] initData empty -> using initDataUnsafe user.id");
       return { telegram_id: unsafeId };
