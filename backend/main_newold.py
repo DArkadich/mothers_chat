@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import List, Literal, Optional, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.limiter import limiter
 from pydantic import BaseModel, Field
@@ -201,6 +203,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.info(
+        f"[ValidationError] path={request.url.path} "
+        f"errors={exc.errors()} body={exc.body}"
+    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 # =====================
