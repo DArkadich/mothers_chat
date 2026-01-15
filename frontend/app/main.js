@@ -309,7 +309,7 @@
   }
 
   function sessionStorageKey(assistantSlug) {
-    return `mamino_session_${assistantSlug}`;
+    return `mamino_session_v2_${assistantSlug}`;
   }
 
   function formatError(err) {
