@@ -276,38 +276,6 @@
   const API_BASE = "/api";
   const TELEGRAM_BOT_USERNAME = "maminonew_bot"; // без @
 
-  let clientLogCount = 0;
-  function sendClientLog(payload) {
-    if (clientLogCount >= 5) return;
-    clientLogCount += 1;
-    try {
-      fetch(`${API_BASE}/client-log`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
-    } catch {
-      // ignore logging errors
-    }
-  }
-
-  window.addEventListener("error", (event) => {
-    const err = event?.error;
-    sendClientLog({
-      message: `[window.error] ${event?.message || "unknown error"}`,
-      stack: err?.stack || null,
-      context: { filename: event?.filename, lineno: event?.lineno, colno: event?.colno },
-    });
-  });
-
-  window.addEventListener("unhandledrejection", (event) => {
-    const reason = event?.reason;
-    sendClientLog({
-      message: `[unhandledrejection] ${reason?.message || String(reason)}`,
-      stack: reason?.stack || null,
-    });
-  });
-
   function getTelegramUserId() {
     try {
       const id = tg?.initDataUnsafe?.user?.id;
