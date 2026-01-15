@@ -304,6 +304,11 @@
     if (initData) {
       return { init_data: initData };
     }
+    const unsafeId = getTelegramId();
+    if (unsafeId) {
+      console.info("[mamino] initData empty -> using initDataUnsafe user.id");
+      return { telegram_id: unsafeId };
+    }
     console.warn("[mamino] initData empty -> dev fallback telegram_id=1");
     return { telegram_id: "1" }; // строкой, как требует API
   }
