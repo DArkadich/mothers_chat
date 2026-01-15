@@ -260,7 +260,17 @@ def create_chat_session(
         db.commit()
         db.refresh(user)
 
-    # 4) создать сессию
+    # 4) если сессия уже есть для этой пары user+assistant — возвращаем последнюю
+    existing = (
+        db.query(ChatSession)
+        .filter(ChatSession.user_id == user.id, ChatSession.assistant_id == assistant.id)
+        .order_by(ChatSession.created_at.desc(), ChatSession.id.desc())
+        .first()
+    )
+    if existing:
+        return {"session_id": existing.id}
+
+    # 5) создать новую сессию
     sess = ChatSession(user_id=user.id, assistant_id=assistant.id)
     db.add(sess)
     db.commit()
