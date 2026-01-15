@@ -212,6 +212,18 @@ app.add_middleware(
 )
 
 
+class ClientLogIn(BaseModel):
+    message: str
+    stack: Optional[str] = None
+    context: Optional[dict] = None
+
+
+@app.post("/api/client-log", response_model=None)
+def client_log(payload: ClientLogIn):
+    logger.info("[ClientLog] %s | stack=%s | context=%s", payload.message, payload.stack, payload.context)
+    return {"ok": True}
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.info(
