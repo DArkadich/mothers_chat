@@ -424,8 +424,13 @@
   let activeSessionId = null;
 
   async function ensureChatSession(assistantSlug) {
-    const cached = localStorage.getItem(sessionStorageKey(assistantSlug));
-    if (cached && cached.length > 0) return cached;
+    const key = sessionStorageKey(assistantSlug);
+    const cached = localStorage.getItem(key);
+    if (cached && cached.length > 0) {
+      if (/^\d+$/.test(cached)) return cached;
+      console.warn("[mamino] invalid cached session_id, reset:", cached);
+      localStorage.removeItem(key);
+    }
 
     const auth = getAuthPayload();
     const data = await apiPost("/chat/session", {
