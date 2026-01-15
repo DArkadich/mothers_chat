@@ -235,16 +235,23 @@ def create_chat_session(
         from backend.core.telegram_auth import validate_init_data
 
         # validate_init_data возвращает dict с данными
-        data = validate_init_data(payload.init_data, bot_token)
-        user_obj = data.get("user")
-        if isinstance(user_obj, str):
-            # иногда user приходит JSON-строкой
-            user_obj = json.loads(user_obj)
+        try:
+            data = validate_init_data(payload.init_data, bot_token)
+            user_obj = data.get("user")
+            if isinstance(user_obj, str):
+                # иногда user приходит JSON-строкой
+                user_obj = json.loads(user_obj)
 
-        if not isinstance(user_obj, dict) or "id" not in user_obj:
-            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+            if not isinstance(user_obj, dict) or "id" not in user_obj:
+                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
 
-        telegram_id = str(user_obj["id"])
+            telegram_id = str(user_obj["id"])
+        except HTTPException:
+            # fallback на telegram_id, если init_data невалиден
+            if payload.telegram_id:
+                telegram_id = str(payload.telegram_id)
+            else:
+                raise
 
     elif payload.telegram_id:
         telegram_id = str(payload.telegram_id)
@@ -304,15 +311,22 @@ def get_chat_history(
 
         from backend.core.telegram_auth import validate_init_data
 
-        data = validate_init_data(payload.init_data, bot_token)
-        user_obj = data.get("user")
-        if isinstance(user_obj, str):
-            user_obj = json.loads(user_obj)
+        try:
+            data = validate_init_data(payload.init_data, bot_token)
+            user_obj = data.get("user")
+            if isinstance(user_obj, str):
+                user_obj = json.loads(user_obj)
 
-        if not isinstance(user_obj, dict) or "id" not in user_obj:
-            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+            if not isinstance(user_obj, dict) or "id" not in user_obj:
+                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
 
-        telegram_id = str(user_obj["id"])
+            telegram_id = str(user_obj["id"])
+        except HTTPException:
+            # fallback на telegram_id, если init_data невалиден
+            if payload.telegram_id:
+                telegram_id = str(payload.telegram_id)
+            else:
+                raise
 
     elif payload.telegram_id:
         telegram_id = str(payload.telegram_id)
