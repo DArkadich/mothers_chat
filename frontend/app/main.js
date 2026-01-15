@@ -466,8 +466,6 @@
         setChatStatus("");
         if (history.length > 0) {
           renderChatHistory(history);
-        } else {
-          appendChatBubble("assistant", "Привет! Я на связи. Чем помочь?");
         }
         chatInputEl?.focus();
       })
