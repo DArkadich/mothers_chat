@@ -240,6 +240,12 @@ def create_chat_session(
     # 2) определить telegram_id
     telegram_id: Optional[str] = None
 
+    logger.info(
+        "[ChatSession] incoming payload: init_data_len=%s telegram_id=%s",
+        len(payload.init_data) if payload.init_data else 0,
+        payload.telegram_id,
+    )
+
     if payload.init_data:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         if not bot_token:
@@ -248,7 +254,15 @@ def create_chat_session(
         from backend.core.telegram_auth import validate_init_data
 
         # validate_init_data возвращает dict с данными
-        data = validate_init_data(payload.init_data, bot_token)
+        try:
+            data = validate_init_data(payload.init_data, bot_token)
+        except HTTPException as exc:
+            logger.info(
+                "[ChatSession] init_data validation failed: detail=%s init_data_len=%s",
+                exc.detail,
+                len(payload.init_data) if payload.init_data else 0,
+            )
+            raise
 
         user_obj = data.get("user")
         if isinstance(user_obj, str):
