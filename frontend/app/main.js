@@ -301,7 +301,8 @@
     const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
     setChatStatus(
       'Откройте приложение внутри Telegram.<br><br>' +
-      `<a id="btnOpenTelegram" class="btnPink btnPink--primary" href="${botUrl}" target="_blank" rel="noopener">Как открыть</a>` +
+      'Найдите бота <strong>@' + TELEGRAM_BOT_USERNAME + '</strong> в Telegram и нажмите кнопку "Открыть" или "Запустить".<br><br>' +
+      `<a id="btnOpenTelegram" class="btnPink btnPink--primary" href="${botUrl}" target="_blank" rel="noopener">Открыть через бота</a>` +
       '<div style="height:10px"></div>' +
       '<button id="btnCopyLink" class="btnPink btnPink--primary" type="button">Скопировать ссылку</button>',
       { html: true }

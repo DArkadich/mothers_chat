@@ -38,11 +38,19 @@ def resolve_user_from_init_data(init_data: str, db: Session, allow_unsafe: bool 
         db: Database session
         allow_unsafe: Если True, при ошибке валидации подписи извлекает user.id без проверки (только для истории)
     """
+    import logging
+    auth_logger = logging.getLogger(__name__)
+    
     if not init_data:
+        auth_logger.warning("[Auth] init_data is required")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="init_data is required")
 
+    # TEST_INIT_DATA работает только в тестовом окружении (CI/smoke)
     test_init = os.getenv("TEST_INIT_DATA")
-    if test_init and init_data == test_init:
+    env_type = os.getenv("ENV", "").lower()
+    is_ci = env_type in ("ci", "test") or os.getenv("ALLOW_TEST_INIT_DATA", "").lower() in ("1", "true", "yes")
+    
+    if test_init and init_data == test_init and is_ci:
         telegram_id = _extract_user_id(init_data)
     else:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -57,8 +65,9 @@ def resolve_user_from_init_data(init_data: str, db: Session, allow_unsafe: bool 
                 raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
             telegram_id = str(user_obj["id"])
         except HTTPException as exc:
+            auth_logger.warning("[Auth] validation failed: detail=%s (init_data_len=%s)", exc.detail, len(init_data))
             if allow_unsafe and "signature" in str(exc.detail).lower():
-                # Временный fallback для истории: извлекаем user.id без проверки подписи
+                # Fallback для истории: извлекаем user.id без проверки подписи
                 telegram_id = _extract_user_id(init_data)
             else:
                 raise

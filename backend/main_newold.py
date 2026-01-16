@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List, Literal, Optional, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.limiter import limiter
 from pydantic import BaseModel, Field
@@ -197,6 +198,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Глобальный exception handler для логирования ошибок
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    logger.error(
+        "[Exception] path=%s method=%s error=%s traceback=%s",
+        request.url.path,
+        request.method,
+        str(exc),
+        traceback.format_exc(),
+    )
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 # =====================
