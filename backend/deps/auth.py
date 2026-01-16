@@ -29,7 +29,15 @@ def _extract_user_id(init_data: str) -> str:
     return str(uid)
 
 
-def resolve_user_from_init_data(init_data: str, db: Session) -> User:
+def resolve_user_from_init_data(init_data: str, db: Session, allow_unsafe: bool = False) -> User:
+    """
+    Разрешает пользователя из init_data с валидацией подписи.
+    
+    Args:
+        init_data: Telegram WebApp initData string
+        db: Database session
+        allow_unsafe: Если True, при ошибке валидации подписи извлекает user.id без проверки (только для истории)
+    """
     if not init_data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="init_data is required")
 
@@ -40,13 +48,20 @@ def resolve_user_from_init_data(init_data: str, db: Session) -> User:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         if not bot_token:
             raise HTTPException(status_code=500, detail="TELEGRAM_BOT_TOKEN is not set")
-        data = validate_init_data(init_data, bot_token)
-        user_obj = data.get("user")
-        if isinstance(user_obj, str):
-            user_obj = json.loads(user_obj)
-        if not isinstance(user_obj, dict) or "id" not in user_obj:
-            raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
-        telegram_id = str(user_obj["id"])
+        try:
+            data = validate_init_data(init_data, bot_token)
+            user_obj = data.get("user")
+            if isinstance(user_obj, str):
+                user_obj = json.loads(user_obj)
+            if not isinstance(user_obj, dict) or "id" not in user_obj:
+                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
+            telegram_id = str(user_obj["id"])
+        except HTTPException as exc:
+            if allow_unsafe and "signature" in str(exc.detail).lower():
+                # Временный fallback для истории: извлекаем user.id без проверки подписи
+                telegram_id = _extract_user_id(init_data)
+            else:
+                raise
 
     user = db.query(User).filter(User.telegram_id == telegram_id).first()
     if not user:
