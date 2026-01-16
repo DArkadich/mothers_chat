@@ -407,7 +407,6 @@
         }
       });
       const msgs = data?.messages;
-      console.log("[mamino] history loaded:", Array.isArray(msgs) ? msgs.length : 0, "messages");
       return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
       // История недоступна (404 или другая ошибка) - не критично, просто возвращаем пустой массив
@@ -530,11 +529,6 @@
         setChatStatus("Ошибка: пустой ответ модели");
       }
     } catch (err) {
-      // Диагностика ошибки
-      console.log("[Mamino] RAW ERROR:", err);
-      console.log("[Mamino] typeof err:", typeof err);
-      console.log("[Mamino] keys:", err && typeof err === "object" ? Object.keys(err) : null);
-
       const msg = String(err?.message || "");
       if (msg.includes("init_data") || msg.includes("initData")) {
         showTelegramOnlyMessage();

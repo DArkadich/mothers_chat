@@ -254,19 +254,10 @@ def get_chat_history(
     Получение истории сообщений по session_id (без system).
     Требует авторизации: сессия должна принадлежать текущему пользователю.
     """
-    logger.info(
-        "[ChatHistory] incoming: session_id=%s init_data_len=%s",
-        payload.session_id,
-        len(payload.init_data) if payload.init_data else 0,
-    )
     # 1) Разрешить пользователя из init_data
-    # Временный fallback для истории: если подпись невалидна, извлекаем user.id без проверки
+    # Fallback для истории: если подпись невалидна, извлекаем user.id без проверки
     from backend.deps.auth import resolve_user_from_init_data
-    try:
-        current_user = resolve_user_from_init_data(payload.init_data, db, allow_unsafe=True)
-    except HTTPException as exc:
-        logger.info("[ChatHistory] auth failed: detail=%s", exc.detail)
-        raise
+    current_user = resolve_user_from_init_data(payload.init_data, db, allow_unsafe=True)
     
     # 2) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
     sess = (
@@ -359,14 +350,12 @@ def send_chat_message(
     if current_fake_mode:
         FAKE_REPLY = os.getenv("FAKE_REPLY", "Hello from fake model")
         reply = FAKE_REPLY
-        logger.info(f"[Chat] Using FAKE mode (ENABLE_FAKE_OPENAI={current_fake_mode})")
     else:
         # Проверка: нужен API ключ (только если не fake режим)
         if not OPENAI_API_KEY:
             raise HTTPException(status_code=500, detail="OpenAI API key is not set")
         if not openai_client:
             raise HTTPException(status_code=500, detail="OpenAI client is not configured")
-        logger.info(f"[Chat] Using REAL OpenAI (ENABLE_FAKE_OPENAI={current_fake_mode}, client={'OK' if openai_client else 'NULL'})")
         reply = openai_client.chat(
             system_prompt=assistant.system_prompt,
             messages=history,
