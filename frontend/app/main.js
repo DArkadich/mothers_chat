@@ -402,11 +402,12 @@
       const data = await apiFetch("/chat/history", {
         method: "POST",
         body: {
-          session_id: sessionId,
+          session_id: parseInt(sessionId, 10),
           ...auth
         }
       });
       const msgs = data?.messages;
+      console.log("[mamino] history loaded:", Array.isArray(msgs) ? msgs.length : 0, "messages");
       return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
       // История недоступна (404 или другая ошибка) - не критично, просто возвращаем пустой массив

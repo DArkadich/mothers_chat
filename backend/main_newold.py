@@ -249,13 +249,16 @@ class ChatHistoryRequest(BaseModel):
 def get_chat_history(
     payload: ChatHistoryRequest,
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user),
 ):
     """
     Получение истории сообщений по session_id (без system).
     Требует авторизации: сессия должна принадлежать текущему пользователю.
     """
-    # 1) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
+    # 1) Разрешить пользователя из init_data
+    from backend.deps.auth import resolve_user_from_init_data
+    current_user = resolve_user_from_init_data(payload.init_data, db)
+    
+    # 2) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
     sess = (
         db.query(ChatSession)
         .filter(ChatSession.id == payload.session_id, ChatSession.user_id == current_user.id)
@@ -289,7 +292,6 @@ def get_chat_history(
 def send_chat_message(
     payload: ChatSendRequest,
     db=Depends(get_db),  # без Session
-    current_user: Any = Depends(get_current_user),
 ):
     # ассистент
     assistant = db.query(Assistant).filter(
@@ -308,7 +310,9 @@ def send_chat_message(
     if not session_user:
         raise HTTPException(status_code=500, detail="Session user not found")
 
-    # auth check
+    # auth check: разрешаем пользователя из init_data
+    from backend.deps.auth import resolve_user_from_init_data
+    current_user = resolve_user_from_init_data(payload.init_data, db)
     cur_tid = str(getattr(current_user, "telegram_id", ""))
     if cur_tid != str(session_user.telegram_id):
         raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
