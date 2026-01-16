@@ -254,9 +254,18 @@ def get_chat_history(
     Получение истории сообщений по session_id (без system).
     Требует авторизации: сессия должна принадлежать текущему пользователю.
     """
+    logger.info(
+        "[ChatHistory] incoming: session_id=%s init_data_len=%s",
+        payload.session_id,
+        len(payload.init_data) if payload.init_data else 0,
+    )
     # 1) Разрешить пользователя из init_data
     from backend.deps.auth import resolve_user_from_init_data
-    current_user = resolve_user_from_init_data(payload.init_data, db)
+    try:
+        current_user = resolve_user_from_init_data(payload.init_data, db)
+    except HTTPException as exc:
+        logger.info("[ChatHistory] auth failed: detail=%s", exc.detail)
+        raise
     
     # 2) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
     sess = (
