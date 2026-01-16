@@ -332,7 +332,7 @@
   }
 
   // Правильная обёртка для fetch, которая всегда бросает строку
-  async function apiFetch(path, { method = "POST", headers = {}, body } = {}) {
+  async function apiFetch(path, { method = "GET", headers = {}, body } = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
       method,
       headers: { "Content-Type": "application/json", ...headers },
@@ -816,9 +816,9 @@
     const deckId = `${sectionKey}-${plan.name}`;
     secondary.setAttribute("data-open-cards", deckId);
     
-    secondary.addEventListener("click", () => {
-      // Используем deck-карточки
-      const cardsList = buildCardsForDeck(deckId);
+    secondary.addEventListener("click", async () => {
+      // Используем deck-карточки (загружаем из API)
+      const cardsList = await buildCardsForDeck(deckId);
       if (cardsList && cardsList.length > 0) {
         openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
       } else {
@@ -1007,18 +1007,9 @@
     renderCards();
   }
 
-  // Заглушка — нужно заменить на реальную функцию, используя существующие данные проекта
-  function buildCardsForDeck(deckId) {
+  // Получение карточек из API или fallback на заглушку
+  async function buildCardsForDeck(deckId) {
     if (!deckId) return null;
-
-    // Пример: карточки для демонстрации (заменить на реальные данные)
-    const themes = [
-      { bg: "#FCE6EF", border: "#F6B6CE" },
-      { bg: "#EAF3FF", border: "#AFCBFF" },
-      { bg: "#EAF9F1", border: "#9BE3B7" },
-      { bg: "#FFF4E6", border: "#FFD4A3" },
-      { bg: "#F3E5F5", border: "#CE93D8" }
-    ];
 
     // Парсим deckId: формат "sectionKey-planName" (например, "pregnancy-Basic")
     const parts = deckId.split("-");
@@ -1027,29 +1018,42 @@
     const sectionKey = parts[0];
     const planName = parts.slice(1).join("-"); // На случай, если в planName есть дефисы
 
-    // Ищем секцию
-    const section = SECTIONS.find(s => s.key === sectionKey);
-    if (!section || !section.mvp) return null;
-
-    // Ищем план
-    const plan = section.plans.find(p => p.name === planName);
-    if (!plan) return null;
-
-    // Используем PREGNANCY_ASSISTANTS для секции беременности
-    if (sectionKey === "pregnancy") {
-      const count = plan.detailsCount || 3;
-      return PREGNANCY_ASSISTANTS.slice(0, Math.min(count, PREGNANCY_ASSISTANTS.length)).map((a, idx) => ({
-        title: a.title,
-        bodyHtml: `<p>${a.subtitle}</p><p>Описание ассистента "${a.title}" поможет тебе с вопросами по этой теме.</p>`,
-        theme: themes[idx % themes.length]
-      }));
+    // Пробуем загрузить из API
+    try {
+      const data = await apiFetch(`/packages/${sectionKey}/${planName}/details`, { method: "GET" });
+      const cards = data?.details_cards;
+      if (Array.isArray(cards) && cards.length > 0) {
+        // Применяем темы к карточкам
+        const themes = [
+          { bg: "#FCE6EF", border: "#F6B6CE" },
+          { bg: "#EAF3FF", border: "#AFCBFF" },
+          { bg: "#EAF9F1", border: "#9BE3B7" },
+          { bg: "#FFF4E6", border: "#FFD4A3" },
+          { bg: "#F3E5F5", border: "#CE93D8" }
+        ];
+        return cards.map((card, idx) => ({
+          title: card.title || "",
+          bodyHtml: Array.isArray(card.items) 
+            ? `<ul>${card.items.map(item => `<li>${String(item)}</li>`).join("")}</ul>`
+            : (card.bodyHtml || card.body || ""),
+          theme: themes[idx % themes.length]
+        }));
+      }
+    } catch (e) {
+      // Если API недоступен или 404 — fallback на заглушку
+      console.warn("[mamino] package details unavailable:", e?.message || String(e));
     }
 
-    // По умолчанию возвращаем примерные карточки
+    // Fallback: заглушка, если API не вернул данные
+    const themes = [
+      { bg: "#FCE6EF", border: "#F6B6CE" },
+      { bg: "#EAF3FF", border: "#AFCBFF" },
+      { bg: "#EAF9F1", border: "#9BE3B7" }
+    ];
+    const section = SECTIONS.find(s => s.key === sectionKey);
+    const plan = section?.plans?.find(p => p.name === planName);
     return [
-      { title: "Ассистент 1", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[0] },
-      { title: "Ассистент 2", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[1] },
-      { title: "Ассистент 3", bodyHtml: `<p>Описание ассистента из плана ${planName} секции ${section.title}…</p>`, theme: themes[2] },
+      { title: "Информация о пакете", bodyHtml: `<p>Детали пакета "${planName}" будут доступны в ближайшее время.</p>`, theme: themes[0] },
     ];
   }
 
@@ -1126,14 +1130,14 @@
     });
 
     // Делегирование событий для data-open-cards (дополнительная поддержка)
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-open-cards]");
       if (!btn) return;
       
       const deckId = btn.getAttribute("data-open-cards");
       if (!deckId) return;
 
-      const cardsList = buildCardsForDeck(deckId);
+      const cardsList = await buildCardsForDeck(deckId);
       if (cardsList && cardsList.length > 0) {
         e.preventDefault();
         // Определяем sectionKey из deckId для возврата

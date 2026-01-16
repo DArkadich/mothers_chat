@@ -1,8 +1,13 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Column, String, Text, DateTime, JSON, Integer, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, JSON, Integer, ForeignKey, Index
 from sqlalchemy.orm import declarative_base, relationship
+
+try:
+    from sqlalchemy.dialects.postgresql import JSONB
+except ImportError:
+    JSONB = JSON
 
 Base = declarative_base()
 
@@ -73,3 +78,18 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
 
     session = relationship("ChatSession", back_populates="messages")
+
+
+class Package(Base):
+    __tablename__ = "packages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    section_key = Column(String(64), nullable=False, index=True)
+    plan_name = Column(String(64), nullable=False, index=True)
+    details_cards = Column(JSONB if JSONB != JSON else JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    __table_args__ = (
+        Index('ix_packages_section_plan', 'section_key', 'plan_name', unique=True),
+    )

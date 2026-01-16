@@ -95,7 +95,7 @@ async def rate_limit_dep(
 # МОДЕЛИ БД
 # ==========
 
-from .models import Base, User, Assistant, ChatSession, ChatMessage
+from .models import Base, User, Assistant, ChatSession, ChatMessage, Package
 
 
 
@@ -304,6 +304,22 @@ def get_chat_history(
     ]
 
     return {"messages": messages}
+
+
+@app.get("/api/packages/{section_key}/{plan_name}/details", response_model=None)
+def get_package_details(section_key: str, plan_name: str, db: Session = Depends(get_db)):
+    """
+    Получение деталей пакета (карточки "Подробнее") по section_key и plan_name.
+    """
+    package = (
+        db.query(Package)
+        .filter(Package.section_key == section_key, Package.plan_name == plan_name)
+        .first()
+    )
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    
+    return {"details_cards": package.details_cards or []}
 
 
 @app.post("/api/chat/send", response_model=None, dependencies=[Depends(rate_limit_dep)])
