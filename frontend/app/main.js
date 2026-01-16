@@ -984,6 +984,8 @@
     }
     renderCards();
     setActiveScreen("cards");
+    // Настраиваем обработчики свайпов после открытия карточек
+    setupCardsSwipe();
   }
 
   function cardsClose() {
@@ -1008,6 +1010,66 @@
     if (!state.cards.list.length) return;
     state.cards.index = (state.cards.index - 1 + state.cards.list.length) % state.cards.list.length;
     renderCards();
+  }
+
+  // Обработчики свайпов для карточек deck
+  let cardsSwipeInitialized = false;
+  function setupCardsSwipe() {
+    const frontEl = cardsFront();
+    if (!frontEl || cardsSwipeInitialized) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isSwipe = false;
+
+    frontEl.addEventListener("touchstart", (e) => {
+      const t = e.touches?.[0];
+      if (!t) return;
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      isSwipe = false;
+    }, { passive: true });
+
+    frontEl.addEventListener("touchmove", (e) => {
+      const t = e.touches?.[0];
+      if (!t) return;
+      const deltaX = Math.abs(t.clientX - touchStartX);
+      const deltaY = Math.abs(t.clientY - touchStartY);
+      // Если горизонтальное движение больше вертикального — это свайп
+      if (deltaX > deltaY && deltaX > 10) {
+        isSwipe = true;
+        e.preventDefault(); // Предотвращаем скролл при свайпе
+      }
+    }, { passive: false });
+
+    frontEl.addEventListener("touchend", (e) => {
+      if (!isSwipe) return;
+      const t = e.changedTouches?.[0];
+      if (!t) return;
+      
+      const deltaX = t.clientX - touchStartX;
+      const threshold = 50; // Минимальное расстояние для срабатывания
+
+      if (Math.abs(deltaX) > threshold) {
+        if (deltaX > 0) {
+          // Свайп вправо — предыдущая карточка
+          cardsGoPrev();
+        } else {
+          // Свайп влево — следующая карточка
+          cardsGoNext();
+        }
+      }
+      isSwipe = false;
+    }, { passive: true });
+
+    // Клик по карточке для перехода к следующей
+    frontEl.addEventListener("click", (e) => {
+      // Не срабатывает, если кликнули по кнопкам навигации
+      if (e.target.closest(".cardsNav")) return;
+      cardsGoNext();
+    });
+
+    cardsSwipeInitialized = true;
   }
 
   // Получение карточек из API или fallback на заглушку
