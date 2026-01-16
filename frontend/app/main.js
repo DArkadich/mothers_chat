@@ -815,13 +815,16 @@
     // Поддержка deck-карточек через data-open-cards
     const deckId = `${sectionKey}-${plan.name}`;
     secondary.setAttribute("data-open-cards", deckId);
+    secondary.setAttribute("data-handled", "1"); // Помечаем, что у кнопки есть прямой обработчик
     
     secondary.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
+      console.log("[mamino] 'Подробнее' clicked, deckId:", deckId);
       try {
         // Используем deck-карточки (загружаем из API)
         const cardsList = await buildCardsForDeck(deckId);
+        console.log("[mamino] cardsList received:", cardsList?.length || 0);
         if (cardsList && cardsList.length > 0) {
           openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
         } else {
