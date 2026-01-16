@@ -11,6 +11,7 @@ if [[ ${1:-} == "--reset-volume" ]]; then
 fi
 
 export ENABLE_FAKE_OPENAI=${ENABLE_FAKE_OPENAI:-1}
+export TEST_INIT_DATA=${TEST_INIT_DATA:-'user=%7B%22id%22%3A111%7D'}
 
 echo "Project: $(pwd)"
 
@@ -78,7 +79,7 @@ fi
 echo "Creating chat session via API"
 RESP="$(curl -sS -w "\n%{http_code}" -X POST "http://localhost:8000/api/chat/session" \
   -H "Content-Type: application/json" \
-  -d '{"assistant_slug":"smoke_test_assistant","telegram_id":"111"}'
+  -d "{\"assistant_slug\":\"smoke_test_assistant\",\"init_data\":\"${TEST_INIT_DATA}\"}"
 )"
 BODY="$(echo "$RESP" | sed '$d')"
 CODE="$(echo "$RESP" | tail -n 1)"
@@ -98,7 +99,7 @@ SESSION_ID="$(echo "$BODY" | jq -r '.session_id')"
 echo "Session created: $SESSION_ID"
 
 # Send a message (fake OpenAI will reply)
-RESP=$(curl -sS -X POST http://localhost:8000/api/chat/send -H "Content-Type: application/json" -d "{\"session_id\": $SESSION_ID, \"assistant_slug\": \"smoke_test_assistant\", \"message\": \"Hello\" }") || true
+RESP=$(curl -sS -X POST http://localhost:8000/api/chat/send -H "Content-Type: application/json" -d "{\"session_id\": $SESSION_ID, \"assistant_slug\": \"smoke_test_assistant\", \"message\": \"Hello\", \"init_data\": \"${TEST_INIT_DATA}\" }") || true
 
 echo "Response from /api/chat/send:"
 echo "$RESP" | jq || echo "$RESP"

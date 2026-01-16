@@ -1,5 +1,5 @@
 import os
-from types import SimpleNamespace
+import json
 import importlib
 
 import pytest
@@ -20,7 +20,7 @@ models_mod = importlib.import_module(MODELS_MODULE)
 # Достаём то, что нам нужно. Если имена отличаются — поправь один раз тут.
 app = getattr(app_mod, "app")
 get_db = getattr(app_mod, "get_db")
-get_current_user_optional = getattr(app_mod, "get_current_user_optional")
+get_current_user = getattr(app_mod, "get_current_user")
 
 Base = getattr(models_mod, "Base")
 User = getattr(models_mod, "User")
@@ -64,8 +64,8 @@ def client(db_session, monkeypatch):
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    # По умолчанию current_user отсутствует (как в реальном "optional")
-    app.dependency_overrides[get_current_user_optional] = lambda: None
+    # По умолчанию используем реальную авторизацию по init_data
+    app.dependency_overrides.pop(get_current_user, None)
 
     with TestClient(app) as c:
         yield c
@@ -90,14 +90,24 @@ def test_send_chat_message_forbidden_when_current_user_mismatch(client, db_sessi
     _seed_assistant(db_session, code="demo")
 
     # Создаём сессию как пользователь A (telegram_id=111)
-    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "telegram_id": "111"})
+    init_data_a = "user=" + json.dumps({"id": 111})
+    os.environ["TEST_INIT_DATA"] = init_data_a
+    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "init_data": init_data_a})
     assert r.status_code == 200, r.text
     session_id = r.json()["session_id"]
 
     # Подкладываем current_user как другой telegram_id (222)
-    app.dependency_overrides[get_current_user_optional] = lambda: SimpleNamespace(telegram_id="222")
-
-    r2 = client.post("/api/chat/send", json={"session_id": session_id, "assistant_slug": "demo", "message": "hi"})
+    init_data_b = "user=" + json.dumps({"id": 222})
+    os.environ["TEST_INIT_DATA"] = init_data_b
+    r2 = client.post(
+        "/api/chat/send",
+        json={
+            "session_id": session_id,
+            "assistant_slug": "demo",
+            "message": "hi",
+            "init_data": init_data_b,
+        },
+    )
     assert r2.status_code == 403, r2.text
     assert r2.json()["detail"] == "Forbidden: telegram_id mismatch"
 
@@ -109,13 +119,21 @@ def test_send_chat_message_ok_when_current_user_matches(client, db_session):
     """
     _seed_assistant(db_session, code="demo")
 
-    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "telegram_id": "111"})
+    init_data = "user=" + json.dumps({"id": 111})
+    os.environ["TEST_INIT_DATA"] = init_data
+    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "init_data": init_data})
     assert r.status_code == 200, r.text
     session_id = r.json()["session_id"]
 
-    app.dependency_overrides[get_current_user_optional] = lambda: SimpleNamespace(telegram_id="111")
-
-    r2 = client.post("/api/chat/send", json={"session_id": session_id, "assistant_slug": "demo", "message": "hi"})
+    r2 = client.post(
+        "/api/chat/send",
+        json={
+            "session_id": session_id,
+            "assistant_slug": "demo",
+            "message": "hi",
+            "init_data": init_data,
+        },
+    )
     assert r2.status_code == 200, r2.text
     body = r2.json()
     assert "reply" in body
@@ -129,12 +147,23 @@ def test_send_chat_message_should_fail_without_auth_but_currently_passes(client,
     """
     _seed_assistant(db_session, code="demo")
 
-    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "telegram_id": "111"})
+    init_data = "user=" + json.dumps({"id": 111})
+    os.environ["TEST_INIT_DATA"] = init_data
+    r = client.post("/api/chat/session", json={"assistant_slug": "demo", "init_data": init_data})
     assert r.status_code == 200, r.text
     session_id = r.json()["session_id"]
 
-    # current_user=None (по умолчанию)
-    r2 = client.post("/api/chat/send", json={"session_id": session_id, "assistant_slug": "demo", "message": "hacked"})
+    # invalid init_data (should fail)
+    os.environ["TEST_INIT_DATA"] = "user=" + json.dumps({"id": 999})
+    r2 = client.post(
+        "/api/chat/send",
+        json={
+            "session_id": session_id,
+            "assistant_slug": "demo",
+            "message": "hacked",
+            "init_data": init_data,
+        },
+    )
     assert r2.status_code in (401, 403), r2.text
 
 

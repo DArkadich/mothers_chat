@@ -5,6 +5,7 @@ import backend.main_newold as appmod
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
+import json
 
 # Use a file-backed sqlite DB for tests to persist tables across connections
 TEST_DB_URL = os.getenv("TEST_DATABASE_URL", "sqlite:///./test_mamino.db")
@@ -35,6 +36,9 @@ def test_create_session_and_send_message(monkeypatch):
     monkeypatch.setenv("ENABLE_FAKE_OPENAI", "1")
     # Обновляем переменную в модуле (env_bool читает os.getenv каждый раз)
     appmod.ENABLE_FAKE_OPENAI = appmod.env_bool("ENABLE_FAKE_OPENAI", "0")
+
+    init_data = "user=" + json.dumps({"id": 123})
+    monkeypatch.setenv("TEST_INIT_DATA", init_data)
     
     # create assistant in DB
     db = appmod.SessionLocal()
@@ -44,7 +48,7 @@ def test_create_session_and_send_message(monkeypatch):
     db.refresh(assistant)
 
     # create session
-    resp = client.post("/api/chat/session", json={"assistant_slug": "testassistant", "telegram_id": "123"})
+    resp = client.post("/api/chat/session", json={"assistant_slug": "testassistant", "init_data": init_data})
     assert resp.status_code == 200
     data = resp.json()
     assert "session_id" in data
@@ -76,7 +80,15 @@ def test_create_session_and_send_message(monkeypatch):
     appmod.openai_client = FakeOpenAI()
 
     # send message
-    resp2 = client.post("/api/chat/send", json={"session_id": session_id, "assistant_slug": "testassistant", "message": "Hi"})
+    resp2 = client.post(
+        "/api/chat/send",
+        json={
+            "session_id": session_id,
+            "assistant_slug": "testassistant",
+            "message": "Hi",
+            "init_data": init_data,
+        },
+    )
     assert resp2.status_code == 200
     data2 = resp2.json()
     assert "reply" in data2 and data2["reply"] == "Hello from fake model"

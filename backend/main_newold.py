@@ -23,6 +23,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker, Session
 
 from openai import OpenAI
 from backend.app.ai.client import OpenAIClient
+from backend.deps.auth import InitDataPayload, resolve_user_from_init_data
 
 # =========================
 # Настройки и инициализация
@@ -59,14 +60,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-async def get_current_user_optional(
-    request: Request = None,
-) -> Optional[Any]:
-    """
-    Optional dependency. В тестах переопределяется.
-    Сейчас возвращаем None (по умолчанию неавторизован).
-    """
-    return None
 
 def get_db() -> Session:
     db = SessionLocal()
@@ -76,14 +69,19 @@ def get_db() -> Session:
         db.close()
 
 
+def get_current_user(
+    payload: InitDataPayload = Depends(),
+    db: Session = Depends(get_db),
+):
+    return resolve_user_from_init_data(payload.init_data, db)
+
+
 # ==========
 # RATE LIMITING
 # ==========
 
 async def rate_limit_dep(
     request: Request,
-    db=Depends(get_db),  # без аннотации Session
-    current_user: Optional[Any] = Depends(get_current_user_optional),
 ) -> None:
     # твоя логика лимитов
     key = request.client.host if request.client else "anon"
@@ -112,8 +110,7 @@ from .models import Base, User, Assistant, ChatSession, ChatMessage
 
 class ChatSessionCreate(BaseModel):
     assistant_slug: str = Field(..., examples=["newborn_sleep"])
-    telegram_id: Optional[str] = Field(None, examples=["123456789"])
-    init_data: Optional[str] = Field(None, description="Telegram WebApp initData string. Server will validate signature and extract user.id as telegram_id.")
+    init_data: str = Field(..., description="Telegram WebApp initData string. Server will validate signature and extract user.id as telegram_id.")
 
 
 class ChatSessionResponse(BaseModel):
@@ -124,6 +121,7 @@ class ChatSendRequest(BaseModel):
     session_id: int
     assistant_slug: str
     message: str
+    init_data: str
 
 
 class ChatMessageDTO(BaseModel):
@@ -209,13 +207,12 @@ app.add_middleware(
 def create_chat_session(
     payload: ChatSessionCreate,
     db: Session = Depends(get_db),
+    current_user: Any = Depends(get_current_user),
 ):
     """
-    Создаёт новую сессию чата для заданного ассистента и telegram_id.
+    Создаёт новую сессию чата для заданного ассистента.
 
-    Поддерживает два варианта передачи идентификатора пользователя:
-    - напрямую `telegram_id` (для простоты локальной разработки),
-    - `init_data` от Telegram WebApp — предпочтительно и безопасно (сервер верифицирует подпись).
+    Использует только `init_data` от Telegram WebApp — сервер верифицирует подпись.
     """
     # 1) ассистент должен существовать
     assistant = db.query(Assistant).filter(
@@ -224,61 +221,18 @@ def create_chat_session(
     if not assistant:
         raise HTTPException(status_code=404, detail="Assistant not found")
 
-    # 2) определить telegram_id
-    telegram_id: Optional[str] = None
-
-    if payload.init_data:
-        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        if not bot_token:
-            raise HTTPException(status_code=500, detail="TELEGRAM_BOT_TOKEN is not set")
-
-        from backend.core.telegram_auth import validate_init_data
-
-        # validate_init_data возвращает dict с данными
-        try:
-            data = validate_init_data(payload.init_data, bot_token)
-            user_obj = data.get("user")
-            if isinstance(user_obj, str):
-                # иногда user приходит JSON-строкой
-                user_obj = json.loads(user_obj)
-
-            if not isinstance(user_obj, dict) or "id" not in user_obj:
-                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
-
-            telegram_id = str(user_obj["id"])
-        except HTTPException:
-            # fallback на telegram_id, если init_data невалиден
-            if payload.telegram_id:
-                telegram_id = str(payload.telegram_id)
-            else:
-                raise
-
-    elif payload.telegram_id:
-        telegram_id = str(payload.telegram_id)
-
-    else:
-        raise HTTPException(status_code=400, detail="telegram_id or init_data is required")
-
-    # 3) найти/создать пользователя
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
-    if not user:
-        user = User(telegram_id=telegram_id)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-
-    # 4) если сессия уже есть для этой пары user+assistant — возвращаем последнюю
+    # 2) если сессия уже есть для этой пары user+assistant — возвращаем последнюю
     existing = (
         db.query(ChatSession)
-        .filter(ChatSession.user_id == user.id, ChatSession.assistant_id == assistant.id)
+        .filter(ChatSession.user_id == current_user.id, ChatSession.assistant_id == assistant.id)
         .order_by(ChatSession.created_at.desc(), ChatSession.id.desc())
         .first()
     )
     if existing:
         return {"session_id": existing.id}
 
-    # 5) создать новую сессию
-    sess = ChatSession(user_id=user.id, assistant_id=assistant.id)
+    # 3) создать новую сессию
+    sess = ChatSession(user_id=current_user.id, assistant_id=assistant.id)
     db.add(sess)
     db.commit()
     db.refresh(sess)
@@ -288,67 +242,29 @@ def create_chat_session(
 
 class ChatHistoryRequest(BaseModel):
     session_id: int
-    init_data: Optional[str] = Field(None, description="Telegram WebApp initData string. Server will validate signature and extract user.id as telegram_id.")
-    telegram_id: Optional[str] = Field(None, examples=["123456789"])
+    init_data: str = Field(..., description="Telegram WebApp initData string. Server will validate signature and extract user.id as telegram_id.")
 
 
 @app.post("/api/chat/history", response_model=None)
 def get_chat_history(
     payload: ChatHistoryRequest,
     db: Session = Depends(get_db),
+    current_user: Any = Depends(get_current_user),
 ):
     """
     Получение истории сообщений по session_id (без system).
     Требует авторизации: сессия должна принадлежать текущему пользователю.
     """
-    # 1) Определить пользователя (та же логика, что в create_chat_session
-    telegram_id: Optional[str] = None
-
-    if payload.init_data:
-        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        if not bot_token:
-            raise HTTPException(status_code=500, detail="TELEGRAM_BOT_TOKEN is not set")
-
-        from backend.core.telegram_auth import validate_init_data
-
-        try:
-            data = validate_init_data(payload.init_data, bot_token)
-            user_obj = data.get("user")
-            if isinstance(user_obj, str):
-                user_obj = json.loads(user_obj)
-
-            if not isinstance(user_obj, dict) or "id" not in user_obj:
-                raise HTTPException(status_code=400, detail="Invalid init_data: missing user.id")
-
-            telegram_id = str(user_obj["id"])
-        except HTTPException:
-            # fallback на telegram_id, если init_data невалиден
-            if payload.telegram_id:
-                telegram_id = str(payload.telegram_id)
-            else:
-                raise
-
-    elif payload.telegram_id:
-        telegram_id = str(payload.telegram_id)
-
-    else:
-        raise HTTPException(status_code=400, detail="telegram_id or init_data is required")
-
-    # 2) Найти пользователя
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # 3) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
+    # 1) Найти сессию с проверкой владельца (КРИТИЧНО для безопасности)
     sess = (
         db.query(ChatSession)
-        .filter(ChatSession.id == payload.session_id, ChatSession.user_id == user.id)
+        .filter(ChatSession.id == payload.session_id, ChatSession.user_id == current_user.id)
         .first()
     )
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # 4) Получить историю сообщений (без system)
+    # 2) Получить историю сообщений (без system)
     history_messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.session_id == sess.id)
@@ -373,7 +289,7 @@ def get_chat_history(
 def send_chat_message(
     payload: ChatSendRequest,
     db=Depends(get_db),  # без Session
-    current_user: Any = Depends(get_current_user_optional),
+    current_user: Any = Depends(get_current_user),
 ):
     # ассистент
     assistant = db.query(Assistant).filter(
@@ -392,11 +308,10 @@ def send_chat_message(
     if not session_user:
         raise HTTPException(status_code=500, detail="Session user not found")
 
-    # optional auth check (ровно как ожидает тест)
-    if current_user is not None:
-        cur_tid = str(getattr(current_user, "telegram_id", ""))
-        if cur_tid != str(session_user.telegram_id):
-            raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
+    # auth check
+    cur_tid = str(getattr(current_user, "telegram_id", ""))
+    if cur_tid != str(session_user.telegram_id):
+        raise HTTPException(status_code=403, detail="Forbidden: telegram_id mismatch")
 
     # Получаем историю сообщений (без system_prompt)
     history_messages = (

@@ -276,17 +276,6 @@
   const API_BASE = "/api";
   const TELEGRAM_BOT_USERNAME = "maminonew_bot"; // без @
 
-  function getTelegramUserId() {
-    try {
-      const id = tg?.initDataUnsafe?.user?.id;
-      if (typeof id === "number" && Number.isFinite(id)) return String(id);
-      if (typeof id === "string" && id.length > 0) return id;
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
   // Secure source from Telegram WebApp. Prefer this over initDataUnsafe.
   function getInitData() {
     try {
@@ -298,19 +287,35 @@
     }
   }
 
-  // Dev fallback: если initData пустой, используем telegram_id="1" для разработки
   function getAuthPayload() {
     const initData = getInitData();
-    const unsafeId = getTelegramUserId();
-    if (initData) {
-      return unsafeId ? { init_data: initData, telegram_id: unsafeId } : { init_data: initData };
+    if (!initData) {
+      throw new Error("init_data is required");
     }
-    if (unsafeId) {
-      console.info("[mamino] initData empty -> using initDataUnsafe user.id");
-      return { telegram_id: unsafeId };
-    }
-    console.warn("[mamino] initData empty -> dev fallback telegram_id=1");
-    return { telegram_id: "1" }; // строкой, как требует API
+    return { init_data: initData };
+  }
+
+  function showTelegramOnlyMessage() {
+    setActiveScreen("chat");
+    clearChatUi();
+    const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+    setChatStatus(
+      'Откройте приложение внутри Telegram.<br><br>' +
+      `<a id="btnOpenTelegram" class="btnPink btnPink--primary" href="${botUrl}" target="_blank" rel="noopener">Как открыть</a>` +
+      '<div style="height:10px"></div>' +
+      '<button id="btnCopyLink" class="btnPink btnPink--primary" type="button">Скопировать ссылку</button>',
+      { html: true }
+    );
+
+    const btn = document.getElementById("btnCopyLink");
+    btn?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setChatStatus("Ссылка скопирована. Открой её в Telegram.", { html: false });
+      } catch {
+        setChatStatus("Не удалось скопировать ссылку. Скопируй вручную из адресной строки.", { html: false });
+      }
+    });
   }
 
   function sessionStorageKey(assistantSlug) {
@@ -405,6 +410,10 @@
       return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
       // История недоступна (404 или другая ошибка) - не критично, просто возвращаем пустой массив
+      const msg = String(e?.message || "");
+      if (msg.includes("init_data") || msg.includes("initData")) {
+        throw e;
+      }
       console.warn("[mamino] history unavailable:", e?.message || String(e));
       return [];
     }
@@ -456,6 +465,16 @@
     clearChatUi();
     if (chatTitleEl) chatTitleEl.textContent = assistantTitle;
 
+    try {
+      getAuthPayload();
+    } catch (e) {
+      const m = String(e?.message || "");
+      if (m.includes("init_data") || m.includes("initData")) {
+        showTelegramOnlyMessage();
+        return;
+      }
+    }
+
     setActiveScreen("chat");
 
     setChatStatus("Подключаю ассистента…");
@@ -471,27 +490,8 @@
       })
       .catch((e) => {
         const m = String(e?.message || "");
-        if (m.includes("initData")) {
-          const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
-
-          setChatStatus(
-            'Открой мини-приложение внутри Telegram.<br><br>' +
-            `<a id="btnOpenTelegram" class="btnPink btnPink--primary" href="${botUrl}" target="_blank" rel="noopener">Открыть Telegram</a>` +
-            '<div style="height:10px"></div>' +
-            '<button id="btnCopyLink" class="btnPink btnPink--primary" type="button">Скопировать ссылку</button>',
-            { html: true }
-          );
-
-          const btn = document.getElementById("btnCopyLink");
-          btn?.addEventListener("click", async () => {
-            try {
-              await navigator.clipboard.writeText(window.location.href);
-              setChatStatus("Ссылка скопирована. Открой её в Telegram.", { html: false });
-            } catch {
-              setChatStatus("Не удалось скопировать ссылку. Скопируй вручную из адресной строки.", { html: false });
-            }
-          });
-
+        if (m.includes("init_data") || m.includes("initData")) {
+          showTelegramOnlyMessage();
           return;
         }
         setChatStatus(`Ошибка: ${formatError(e)}`);
@@ -506,10 +506,12 @@
     setChatStatus("Ассистент думает…");
 
     try {
+      const auth = getAuthPayload();
       const data = await apiPost("/chat/send", {
         session_id: activeSessionId,
         assistant_slug: activeAssistantSlug,
-        message: text
+        message: text,
+        ...auth
       });
 
       setChatStatus("");
@@ -531,7 +533,13 @@
       console.log("[Mamino] RAW ERROR:", err);
       console.log("[Mamino] typeof err:", typeof err);
       console.log("[Mamino] keys:", err && typeof err === "object" ? Object.keys(err) : null);
-      
+
+      const msg = String(err?.message || "");
+      if (msg.includes("init_data") || msg.includes("initData")) {
+        showTelegramOnlyMessage();
+        return;
+      }
+
       setChatStatus(`Ошибка: ${formatError(err)}`);
     }
   }
@@ -1143,15 +1151,9 @@
   // Boot
   function boot() {
     setupTelegramUi();
-    // Предупреждение о пустом initData: в dev - info, в prod - warn
+    // Строгий режим: без initData считаем, что приложение открыто вне Telegram
     if (tg && !getInitData()) {
-      // Проверяем, открыто ли в Telegram (если tg доступен, но initData нет - вероятно dev)
-      const isDev = !window.location.hostname.includes("mamino.online") || window.location.hostname === "localhost";
-      if (isDev) {
-        console.info("[mamino] initData пустой: dev режим, используется fallback telegram_id=1");
-      } else {
-        console.warn("[mamino] initData пустой: вероятно, приложение открыто не из Telegram WebApp.");
-      }
+      console.warn("[mamino] initData пустой: откройте приложение внутри Telegram.");
     }
     renderAssistants();
     wireEvents();
