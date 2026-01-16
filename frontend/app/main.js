@@ -817,20 +817,16 @@
     secondary.setAttribute("data-open-cards", deckId);
     
     secondary.addEventListener("click", async () => {
-      // Используем deck-карточки (загружаем из API)
-      const cardsList = await buildCardsForDeck(deckId);
-      if (cardsList && cardsList.length > 0) {
-        openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
-      } else {
-        // Fallback на details (для совместимости)
-        const count = plan.detailsCount || 3;
-        const items = PREGNANCY_ASSISTANTS.slice(0, count).map(a => ({ title: a.title, subtitle: a.subtitle, src: a.src }));
-        detailsOpen({
-          title: sectionTitle,
-          plan: plan.name,
-          items,
-          returnTo: { screen: "assistants", openKey: sectionKey }
-        });
+      try {
+        // Используем deck-карточки (загружаем из API)
+        const cardsList = await buildCardsForDeck(deckId);
+        if (cardsList && cardsList.length > 0) {
+          openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+        } else {
+          setChatStatus("Описание пакета временно недоступно. Попробуйте позже.");
+        }
+      } catch (e) {
+        setChatStatus(`Не удалось загрузить описание пакета: ${formatError(e)}`);
       }
     });
 
@@ -1018,7 +1014,9 @@
     const sectionKey = parts[0];
     const planName = parts.slice(1).join("-"); // На случай, если в planName есть дефисы
 
-    // Пробуем загрузить из API
+    // Загружаем из API (без fallback в проде)
+    const isDev = !window.location.hostname.includes("mamino.online") || window.location.hostname === "localhost";
+    
     try {
       const data = await apiFetch(`/packages/${sectionKey}/${planName}/details`, { method: "GET" });
       const cards = data?.details_cards;
@@ -1040,21 +1038,27 @@
         }));
       }
     } catch (e) {
-      // Если API недоступен или 404 — fallback на заглушку
-      console.warn("[mamino] package details unavailable:", e?.message || String(e));
+      if (isDev) {
+        // В dev можно fallback
+        console.warn("[mamino] package details unavailable (dev fallback):", e?.message || String(e));
+        const themes = [
+          { bg: "#FCE6EF", border: "#F6B6CE" },
+          { bg: "#EAF3FF", border: "#AFCBFF" },
+          { bg: "#EAF9F1", border: "#9BE3B7" }
+        ];
+        return [
+          { title: "Информация о пакете", bodyHtml: `<p>Детали пакета "${planName}" будут доступны в ближайшее время.</p>`, theme: themes[0] },
+        ];
+      }
+      // В проде — пробрасываем ошибку (не тихая деградация)
+      throw e;
     }
-
-    // Fallback: заглушка, если API не вернул данные
-    const themes = [
-      { bg: "#FCE6EF", border: "#F6B6CE" },
-      { bg: "#EAF3FF", border: "#AFCBFF" },
-      { bg: "#EAF9F1", border: "#9BE3B7" }
-    ];
-    const section = SECTIONS.find(s => s.key === sectionKey);
-    const plan = section?.plans?.find(p => p.name === planName);
-    return [
-      { title: "Информация о пакете", bodyHtml: `<p>Детали пакета "${planName}" будут доступны в ближайшее время.</p>`, theme: themes[0] },
-    ];
+    
+    // Если API вернул пустой массив — это тоже ошибка данных
+    if (isDev) {
+      return [{ title: "Информация о пакете", bodyHtml: `<p>Карточки для пакета "${planName}" пока не настроены.</p>`, theme: { bg: "#FCE6EF", border: "#F6B6CE" } }];
+    }
+    throw new Error("Package details not configured");
   }
 
   // =========================
@@ -1137,13 +1141,19 @@
       const deckId = btn.getAttribute("data-open-cards");
       if (!deckId) return;
 
-      const cardsList = await buildCardsForDeck(deckId);
-      if (cardsList && cardsList.length > 0) {
-        e.preventDefault();
-        // Определяем sectionKey из deckId для возврата
-        const parts = deckId.split("-");
-        const sectionKey = parts[0] || "pregnancy";
-        openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+      try {
+        const cardsList = await buildCardsForDeck(deckId);
+        if (cardsList && cardsList.length > 0) {
+          e.preventDefault();
+          // Определяем sectionKey из deckId для возврата
+          const parts = deckId.split("-");
+          const sectionKey = parts[0] || "pregnancy";
+          openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+        } else {
+          setChatStatus("Описание пакета временно недоступно. Попробуйте позже.");
+        }
+      } catch (err) {
+        setChatStatus(`Не удалось загрузить описание: ${formatError(err)}`);
       }
     });
   }

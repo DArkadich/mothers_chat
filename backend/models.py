@@ -90,6 +90,4 @@ class Package(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
-    __table_args__ = (
-        Index('ix_packages_section_plan', 'section_key', 'plan_name', unique=True),
-    )
+    # Уникальность гарантируется миграцией через constraint, не через Index

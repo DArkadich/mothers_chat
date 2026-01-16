@@ -136,6 +136,17 @@ class ChatSendResponse(BaseModel):
     messages: List[ChatMessageDTO]
 
 
+class DetailCardItem(BaseModel):
+    title: str
+    items: Optional[List[str]] = None
+    bodyHtml: Optional[str] = None
+    body: Optional[str] = None
+
+
+class PackageDetailsResponse(BaseModel):
+    details_cards: List[DetailCardItem]
+
+
 # ==============
 # ВСПОМОГАТЕЛЬНОЕ
 # ==============
@@ -306,7 +317,7 @@ def get_chat_history(
     return {"messages": messages}
 
 
-@app.get("/api/packages/{section_key}/{plan_name}/details", response_model=None)
+@app.get("/api/packages/{section_key}/{plan_name}/details", response_model=PackageDetailsResponse)
 def get_package_details(section_key: str, plan_name: str, db: Session = Depends(get_db)):
     """
     Получение деталей пакета (карточки "Подробнее") по section_key и plan_name.
@@ -319,7 +330,20 @@ def get_package_details(section_key: str, plan_name: str, db: Session = Depends(
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
     
-    return {"details_cards": package.details_cards or []}
+    raw_cards = package.details_cards
+    if not isinstance(raw_cards, list):
+        raise HTTPException(status_code=500, detail="Invalid package details_cards format")
+    
+    # Валидация и нормализация карточек
+    validated_cards = []
+    for card in raw_cards:
+        if not isinstance(card, dict):
+            continue
+        if not card.get("title"):
+            continue
+        validated_cards.append(DetailCardItem(**card))
+    
+    return PackageDetailsResponse(details_cards=validated_cards)
 
 
 @app.post("/api/chat/send", response_model=None, dependencies=[Depends(rate_limit_dep)])

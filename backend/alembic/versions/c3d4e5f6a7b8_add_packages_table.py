@@ -33,7 +33,8 @@ def upgrade() -> None:
     )
     op.create_index("ix_packages_section_key", "packages", ["section_key"])
     op.create_index("ix_packages_plan_name", "packages", ["plan_name"])
-    op.create_index("ix_packages_section_plan", "packages", ["section_key", "plan_name"], unique=True)
+    # Уникальный constraint на (section_key, plan_name) для предотвращения дублей
+    op.create_unique_constraint("uq_packages_section_plan", "packages", ["section_key", "plan_name"])
 
 
 def downgrade() -> None:
