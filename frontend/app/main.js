@@ -816,17 +816,21 @@
     const deckId = `${sectionKey}-${plan.name}`;
     secondary.setAttribute("data-open-cards", deckId);
     
-    secondary.addEventListener("click", async () => {
+    secondary.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       try {
         // Используем deck-карточки (загружаем из API)
         const cardsList = await buildCardsForDeck(deckId);
         if (cardsList && cardsList.length > 0) {
           openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
         } else {
-          setChatStatus("Описание пакета временно недоступно. Попробуйте позже.");
+          console.error("[mamino] package details empty:", deckId);
+          alert("Описание пакета временно недоступно. Попробуйте позже.");
         }
-      } catch (e) {
-        setChatStatus(`Не удалось загрузить описание пакета: ${formatError(e)}`);
+      } catch (err) {
+        console.error("[mamino] package details error:", err);
+        alert(`Не удалось загрузить описание пакета: ${formatError(err)}`);
       }
     });
 
@@ -1017,8 +1021,10 @@
     // Загружаем из API (без fallback в проде)
     const isDev = !window.location.hostname.includes("mamino.online") || window.location.hostname === "localhost";
     
+    console.log("[mamino] loading package details:", sectionKey, planName);
     try {
       const data = await apiFetch(`/packages/${sectionKey}/${planName}/details`, { method: "GET" });
+      console.log("[mamino] package details response:", data);
       const cards = data?.details_cards;
       if (Array.isArray(cards) && cards.length > 0) {
         // Применяем темы к карточкам
@@ -1137,23 +1143,29 @@
     document.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-open-cards]");
       if (!btn) return;
+      // Если на кнопке уже есть обработчик (secondary), не дублируем
+      if (btn.onclick || btn.hasAttribute("data-handled")) return;
       
       const deckId = btn.getAttribute("data-open-cards");
       if (!deckId) return;
 
+      e.preventDefault();
+      e.stopPropagation();
+      
       try {
         const cardsList = await buildCardsForDeck(deckId);
         if (cardsList && cardsList.length > 0) {
-          e.preventDefault();
           // Определяем sectionKey из deckId для возврата
           const parts = deckId.split("-");
           const sectionKey = parts[0] || "pregnancy";
           openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
         } else {
-          setChatStatus("Описание пакета временно недоступно. Попробуйте позже.");
+          console.error("[mamino] package details empty:", deckId);
+          alert("Описание пакета временно недоступно. Попробуйте позже.");
         }
       } catch (err) {
-        setChatStatus(`Не удалось загрузить описание: ${formatError(err)}`);
+        console.error("[mamino] package details error:", err);
+        alert(`Не удалось загрузить описание: ${formatError(err)}`);
       }
     });
   }
