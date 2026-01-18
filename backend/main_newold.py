@@ -235,13 +235,17 @@ async def global_exception_handler(request: Request, exc: Exception):
 def create_chat_session(
     payload: ChatSessionCreate,
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user),
 ):
     """
     Создаёт новую сессию чата для заданного ассистента.
 
     Использует только `init_data` от Telegram WebApp — сервер верифицирует подпись.
     """
+    # ВАЖНО: не используем Depends(get_current_user) здесь, чтобы не было конфликта
+    # двух "body" моделей (payload + InitDataPayload). Резолвим пользователя вручную,
+    # как в /api/chat/send и /api/chat/history.
+    current_user = resolve_user_from_init_data(payload.init_data, db)
+
     # 1) ассистент должен существовать
     assistant = db.query(Assistant).filter(
         or_(Assistant.code == payload.assistant_slug, Assistant.slug == payload.assistant_slug)
