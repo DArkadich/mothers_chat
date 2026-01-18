@@ -184,7 +184,9 @@
   // Поэтому в браузере это: /app/cards/pregnancy/01.svg ... 07.svg
   const CARDS_BASE = "/app/cards/pregnancy";
 
-  const PREGNANCY_ASSISTANTS = [
+  // ВАЖНО: этот набор ассистентов (7 шт) относится к разделу "Малыши 0–1 год".
+  // Коды должны существовать в БД (assistants.code/slug), иначе чат не откроется.
+  const NEWBORN_0_1_ASSISTANTS = [
     { code: "pregnancy_first_days", title: "Наши первые дни вместе", subtitle: "Быт и опора в первые недели", src: `${CARDS_BASE}/01.svg` },
     { code: "pregnancy_sleep", title: "Малыш спит сладко", subtitle: "Сон и засыпания мягко, по возрасту", src: `${CARDS_BASE}/02.svg` },
     { code: "pregnancy_milk_mom", title: "Молочная мама", subtitle: "ГВ/смесь/смешанное — бытовые ориентиры", src: `${CARDS_BASE}/03.svg` },
@@ -194,10 +196,16 @@
     { code: "pregnancy_mom_rest", title: "Мама отдыхает", subtitle: "Отдых и восстановление без чувства вины", src: `${CARDS_BASE}/07.svg` }
   ];
 
-  // Пока контент и карточки для остальных секций не готовы — подключаем ассистентов как MVP.
-  // Для "Малыши 0–1 год" используем тот же набор ассистентов, что и в "Беременным"
-  // (по вашему списку: Basic=2, Smart=4, Pro=7).
-  const NEWBORN_0_1_ASSISTANTS = PREGNANCY_ASSISTANTS;
+  // Раздел "Беременным" — новый набор (коды нужно подтянуть из БД, не придумываем).
+  // Пока код неизвестен, оставляем code пустым и блокируем переход в чат.
+  const PREGNANCY_ASSISTANTS = [
+    { code: "", title: "Красивая беременность", subtitle: "" },
+    { code: "", title: "Вкусная беременность", subtitle: "" },
+    { code: "", title: "Неделя за неделей. Ты и малыш", subtitle: "" },
+    { code: "", title: "Легкое тело. Беременность в движении", subtitle: "" },
+    { code: "", title: "Сплю, а не ворочаюсь", subtitle: "" },
+    { code: "", title: "Малыш на подходе. Собираем нужное", subtitle: "" },
+  ];
 
   function getSectionAssistants(sectionKey) {
     if (sectionKey === "pregnancy") return PREGNANCY_ASSISTANTS;
@@ -266,9 +274,8 @@
           items: [
             "BASIC + SMART",
             PREGNANCY_ASSISTANTS[5].title,
-            PREGNANCY_ASSISTANTS[6].title,
           ],
-          detailsCount: 7,
+          detailsCount: 6,
           enableDetails: true,
         }
       ]
@@ -305,7 +312,8 @@
           gift: "+3 подарка",
           items: [
             "BASIC + SMART",
-            NEWBORN_0_1_ASSISTANTS[4].title + ". " + NEWBORN_0_1_ASSISTANTS[5].title,
+            NEWBORN_0_1_ASSISTANTS[4].title,
+            NEWBORN_0_1_ASSISTANTS[5].title,
             NEWBORN_0_1_ASSISTANTS[6].title,
           ],
           detailsCount: 7,
@@ -634,7 +642,12 @@
       row.appendChild(sub);
 
       row.addEventListener("click", () => {
-        openChatUi(a.code, `${a.title} • ${sectionTitle} • ${plan.name}`);
+        const code = String(a.code || "").trim();
+        if (!code) {
+          alert("Этот ассистент пока не подключен (нужен code из БД).");
+          return;
+        }
+        openChatUi(code, `${a.title} • ${sectionTitle} • ${plan.name}`);
       });
 
       packageListEl.appendChild(row);
