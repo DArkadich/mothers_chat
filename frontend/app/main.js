@@ -196,6 +196,15 @@
     { code: "pregnancy_mom_rest", title: "Мама отдыхает", subtitle: "Отдых и восстановление без чувства вины", src: `${CARDS_BASE}/07.svg` }
   ];
 
+  const KIDS_1_3_ASSISTANTS = [
+    { code: "kids_1_3_crisis3", title: "Кризис трёх лет: держим баланс", subtitle: "" },
+    { code: "kids_1_3_picky_eater", title: "Как накормить разборчивого малыша", subtitle: "" },
+    { code: "kids_1_3_potty", title: "Горшок: шаг за шагом", subtitle: "" },
+    { code: "kids_1_3_independent_play", title: "Самостоятельная игра: шаг за шагом", subtitle: "" },
+    { code: "kids_1_3_first_words", title: "Первые слова: легко и играючи", subtitle: "" },
+    { code: "kids_1_3_listening", title: "Когда ребёнок слушается", subtitle: "" },
+  ];
+
   // Раздел "Беременным" — новый набор ассистентов.
   const PREGNANCY_ASSISTANTS = [
     { code: "pregnancy_beauty_mom", title: "Красивая беременность", subtitle: "Уход, стиль и уверенность — мягко и спокойно" },
@@ -209,6 +218,7 @@
   function getSectionAssistants(sectionKey) {
     if (sectionKey === "pregnancy") return PREGNANCY_ASSISTANTS;
     if (sectionKey === "newborn_0_1") return NEWBORN_0_1_ASSISTANTS;
+    if (sectionKey === "kids_1_3") return KIDS_1_3_ASSISTANTS;
     return [];
   }
 
@@ -320,7 +330,46 @@
         }
       ]
     },
-    { key: "kids_1_3", title: "Малыши 1 - 3 года", subtitle: "Прикорм, горшок, привычки и кризис трех лет" },
+    {
+      key: "kids_1_3",
+      title: "Малыши 1 - 3 года",
+      subtitle: "Прикорм, горшок, привычки и кризис трех лет",
+      mvp: true,
+      plans: [
+        {
+          name: "Basic",
+          gift: "+1 подарок",
+          items: [
+            KIDS_1_3_ASSISTANTS[0].title,
+            KIDS_1_3_ASSISTANTS[1].title,
+          ],
+          detailsCount: 2,
+          enableDetails: false,
+        },
+        {
+          name: "Smart",
+          gift: "+2 подарка",
+          items: [
+            "BASIC +",
+            KIDS_1_3_ASSISTANTS[2].title,
+            KIDS_1_3_ASSISTANTS[3].title,
+          ],
+          detailsCount: 4,
+          enableDetails: false,
+        },
+        {
+          name: "Pro",
+          gift: "+3 подарка",
+          items: [
+            "BASIC + SMART",
+            KIDS_1_3_ASSISTANTS[4].title,
+            KIDS_1_3_ASSISTANTS[5].title,
+          ],
+          detailsCount: 6,
+          enableDetails: false,
+        }
+      ]
+    },
     { key: "kids_3_7", title: "Дети 3 - 7 лет (сад)", subtitle: "Речь, игры, концентрация и адаптация" },
     { key: "school_7_10", title: "Школьники 7 - 10 лет", subtitle: "Домашка, режим и отношения" },
     { key: "school_11_14", title: "Школьники 11 - 14 лет", subtitle: "Подростки, гаджеты, эмоции и будущее" },
