@@ -194,6 +194,17 @@
     { code: "pregnancy_mom_rest", title: "Мама отдыхает", subtitle: "Отдых и восстановление без чувства вины", src: `${CARDS_BASE}/07.svg` }
   ];
 
+  // Пока контент и карточки для остальных секций не готовы — подключаем ассистентов как MVP.
+  // Для "Малыши 0–1 год" используем тот же набор ассистентов, что и в "Беременным"
+  // (по вашему списку: Basic=2, Smart=4, Pro=7).
+  const NEWBORN_0_1_ASSISTANTS = PREGNANCY_ASSISTANTS;
+
+  function getSectionAssistants(sectionKey) {
+    if (sectionKey === "pregnancy") return PREGNANCY_ASSISTANTS;
+    if (sectionKey === "newborn_0_1") return NEWBORN_0_1_ASSISTANTS;
+    return [];
+  }
+
 
   // =========================
   // PURCHASE STATE (MVP)
@@ -236,6 +247,7 @@
             PREGNANCY_ASSISTANTS[2].title,
           ],
           detailsCount: 3,
+          enableDetails: true,
         },
         {
           name: "Smart",
@@ -246,6 +258,7 @@
             PREGNANCY_ASSISTANTS[4].title,
           ],
           detailsCount: 5,
+          enableDetails: true,
         },
         {
           name: "Pro",
@@ -256,10 +269,50 @@
             PREGNANCY_ASSISTANTS[6].title,
           ],
           detailsCount: 7,
+          enableDetails: true,
         }
       ]
     },
-    { key: "newborn_0_1", title: "Малыши 0 - 1 год", subtitle: "Сон, грудь, животик и мама после родов" },
+    {
+      key: "newborn_0_1",
+      title: "Малыши 0 - 1 год",
+      subtitle: "Сон, грудь, животик и мама после родов",
+      mvp: true,
+      plans: [
+        {
+          name: "Basic",
+          gift: "+1 подарок",
+          items: [
+            NEWBORN_0_1_ASSISTANTS[0].title,
+            NEWBORN_0_1_ASSISTANTS[1].title,
+          ],
+          detailsCount: 2,
+          enableDetails: false,
+        },
+        {
+          name: "Smart",
+          gift: "+2 подарка",
+          items: [
+            "BASIC +",
+            NEWBORN_0_1_ASSISTANTS[2].title,
+            NEWBORN_0_1_ASSISTANTS[3].title,
+          ],
+          detailsCount: 4,
+          enableDetails: false,
+        },
+        {
+          name: "Pro",
+          gift: "+3 подарка",
+          items: [
+            "BASIC + SMART",
+            NEWBORN_0_1_ASSISTANTS[4].title + ". " + NEWBORN_0_1_ASSISTANTS[5].title,
+            NEWBORN_0_1_ASSISTANTS[6].title,
+          ],
+          detailsCount: 7,
+          enableDetails: false,
+        }
+      ]
+    },
     { key: "kids_1_3", title: "Малыши 1 - 3 года", subtitle: "Прикорм, горшок, привычки и кризис трех лет" },
     { key: "kids_3_7", title: "Дети 3 - 7 лет (сад)", subtitle: "Речь, игры, концентрация и адаптация" },
     { key: "school_7_10", title: "Школьники 7 - 10 лет", subtitle: "Домашка, режим и отношения" },
@@ -548,12 +601,22 @@
     if (!packageListEl) return;
 
     const count = plan.detailsCount || 3;
-    const items = PREGNANCY_ASSISTANTS.slice(0, count);
+    const sectionAssistants = getSectionAssistants(sectionKey);
+    const items = sectionAssistants.slice(0, count);
 
     if (packageTitleEl) packageTitleEl.textContent = `${sectionTitle} • ${plan.name}`;
     if (packageHintEl) packageHintEl.textContent = "Выберите ассистента — откроется отдельный чат.";
 
     packageListEl.innerHTML = "";
+
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "acc__soon";
+      empty.textContent = "Скоро";
+      packageListEl.appendChild(empty);
+      setActiveScreen("package");
+      return;
+    }
 
     items.forEach((a) => {
       const row = document.createElement("div");
@@ -776,11 +839,6 @@
     primary.type = "button";
     primary.className = "btnPink btnPink--primary";
 
-    const secondary = document.createElement("button");
-    secondary.type = "button";
-    secondary.className = "btnLink";
-    secondary.textContent = "Подробнее";
-
     const pr = purchasedRank(sectionKey);
     const myPlan = getPurchasedPlan(sectionKey);
     const thisRank = PLAN_RANK[plan.name] || 0;
@@ -812,34 +870,37 @@
       });
     }
 
-    // Поддержка deck-карточек через data-open-cards
-    const deckId = `${sectionKey}-${plan.name}`;
-    secondary.setAttribute("data-open-cards", deckId);
-    secondary.setAttribute("data-handled", "1"); // Помечаем, что у кнопки есть прямой обработчик
-    
-    secondary.addEventListener("click", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("[mamino] 'Подробнее' clicked, deckId:", deckId);
-      try {
-        // Используем deck-карточки (загружаем из API)
-        const cardsList = await buildCardsForDeck(deckId);
-        console.log("[mamino] cardsList received:", cardsList?.length || 0);
-        if (cardsList && cardsList.length > 0) {
-          openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
-        } else {
-          console.error("[mamino] package details empty:", deckId);
-          alert("Описание пакета временно недоступно. Попробуйте позже.");
-        }
-      } catch (err) {
-        console.error("[mamino] package details error:", err);
-        alert(`Не удалось загрузить описание пакета: ${formatError(err)}`);
-      }
-    });
-
     right.appendChild(gifts);
     right.appendChild(primary);
-    right.appendChild(secondary);
+    // "Подробнее" (карточки) включаем только там, где контент уже настроен
+    if (plan.enableDetails === true) {
+      const secondary = document.createElement("button");
+      secondary.type = "button";
+      secondary.className = "btnLink";
+      secondary.textContent = "Подробнее";
+
+      // Поддержка deck-карточек через data-open-cards
+      const deckId = `${sectionKey}-${plan.name}`;
+      secondary.setAttribute("data-open-cards", deckId);
+      secondary.setAttribute("data-handled", "1"); // Помечаем, что у кнопки есть прямой обработчик
+
+      secondary.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const cardsList = await buildCardsForDeck(deckId);
+          if (cardsList && cardsList.length > 0) {
+            openCards(cardsList, 0, { screen: "assistants", openKey: sectionKey });
+          } else {
+            alert("Описание пакета временно недоступно. Попробуйте позже.");
+          }
+        } catch (err) {
+          alert(`Не удалось загрузить описание пакета: ${formatError(err)}`);
+        }
+      });
+
+      right.appendChild(secondary);
+    }
 
     offer.appendChild(left);
     offer.appendChild(right);
