@@ -959,7 +959,7 @@
 
     const i = state.cards.index;
     const cur = list[i];
-    const nxt = list[(i + 1) % list.length];
+    const nxt = list[Math.min(i + 1, list.length - 1)];
 
     const frontEl = cardsFront();
     const nextEl = cardsNext();
@@ -1002,13 +1002,21 @@
 
   function cardsGoNext() {
     if (!state.cards.list.length) return;
-    state.cards.index = (state.cards.index + 1) % state.cards.list.length;
+    if (state.cards.index >= state.cards.list.length - 1) {
+      cardsClose();
+      return;
+    }
+    state.cards.index = state.cards.index + 1;
     renderCards();
   }
 
   function cardsGoPrev() {
     if (!state.cards.list.length) return;
-    state.cards.index = (state.cards.index - 1 + state.cards.list.length) % state.cards.list.length;
+    if (state.cards.index <= 0) {
+      cardsClose();
+      return;
+    }
+    state.cards.index = state.cards.index - 1;
     renderCards();
   }
 
@@ -1062,10 +1070,9 @@
       isSwipe = false;
     }, { passive: true });
 
-    // Клик по карточке для перехода к следующей
+    // Тап по карточке — только вперёд (ссылки/кнопки внутри не перехватываем)
     frontEl.addEventListener("click", (e) => {
-      // Не срабатывает, если кликнули по кнопкам навигации
-      if (e.target.closest(".cardsNav")) return;
+      if (e.target.closest("a, button, input, textarea, select, label")) return;
       cardsGoNext();
     });
 
@@ -1185,23 +1192,6 @@
       if (!btn) return;
       e.preventDefault();
       openDemoChat(btn.getAttribute("data-demo-topic"));
-    });
-
-    // Обработчик навигации deck-карточек
-    document.addEventListener("click", (e) => {
-      if (e.target.id === "cardsNextBtn") {
-        e.preventDefault();
-        cardsGoNext();
-      }
-      if (e.target.id === "cardsPrevBtn") {
-        e.preventDefault();
-        // Если это первая карточка, возвращаемся назад
-        if (state.cards.index === 0) {
-          cardsClose();
-        } else {
-          cardsGoPrev();
-        }
-      }
     });
 
     // Делегирование событий для data-open-cards (дополнительная поддержка)

@@ -895,10 +895,4 @@ body::before{
   margin-bottom: 0;
 }
 
-.cardsNav {
-  position: absolute;
-  left: 16px; right: 16px; bottom: 14px;
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-}
+/* .cardsNav удалён: навигация по свайпу/тапу */
