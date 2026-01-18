@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List, Literal, Optional, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.limiter import limiter
@@ -209,6 +210,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Логирование 422 (помогает понять, какие поля не совпали)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    try:
+        raw = await request.body()
+        body = raw.decode("utf-8", errors="replace")
+        if len(body) > 2000:
+            body = body[:2000] + "...[truncated]"
+    except Exception:
+        body = "<unavailable>"
+
+    logger.info(
+        "[ValidationError] path=%s method=%s errors=%s body=%s",
+        request.url.path,
+        request.method,
+        exc.errors(),
+        body,
+    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 # Глобальный exception handler для логирования ошибок
