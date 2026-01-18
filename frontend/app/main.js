@@ -196,15 +196,14 @@
     { code: "pregnancy_mom_rest", title: "Мама отдыхает", subtitle: "Отдых и восстановление без чувства вины", src: `${CARDS_BASE}/07.svg` }
   ];
 
-  // Раздел "Беременным" — новый набор (коды нужно подтянуть из БД, не придумываем).
-  // Пока код неизвестен, оставляем code пустым и блокируем переход в чат.
+  // Раздел "Беременным" — новый набор ассистентов.
   const PREGNANCY_ASSISTANTS = [
-    { code: "", title: "Красивая беременность", subtitle: "" },
-    { code: "", title: "Вкусная беременность", subtitle: "" },
-    { code: "", title: "Неделя за неделей. Ты и малыш", subtitle: "" },
-    { code: "", title: "Легкое тело. Беременность в движении", subtitle: "" },
-    { code: "", title: "Сплю, а не ворочаюсь", subtitle: "" },
-    { code: "", title: "Малыш на подходе. Собираем нужное", subtitle: "" },
+    { code: "pregnancy_beauty_mom", title: "Красивая беременность", subtitle: "Уход, стиль и уверенность — мягко и спокойно" },
+    { code: "pregnancy_tasty_mom", title: "Вкусная беременность", subtitle: "" },
+    { code: "pregnancy_week_by_week", title: "Неделя за неделей. Ты и малыш", subtitle: "" },
+    { code: "pregnancy_light_body", title: "Легкое тело. Беременность в движении", subtitle: "" },
+    { code: "pregnancy_sleep_comfort", title: "Сплю, а не ворочаюсь", subtitle: "" },
+    { code: "pregnancy_baby_on_the_way", title: "Малыш на подходе. Собираем нужное", subtitle: "" },
   ];
 
   function getSectionAssistants(sectionKey) {
@@ -255,7 +254,7 @@
             PREGNANCY_ASSISTANTS[2].title,
           ],
           detailsCount: 3,
-          enableDetails: true,
+          enableDetails: false,
         },
         {
           name: "Smart",
@@ -266,7 +265,7 @@
             PREGNANCY_ASSISTANTS[4].title,
           ],
           detailsCount: 5,
-          enableDetails: true,
+          enableDetails: false,
         },
         {
           name: "Pro",
@@ -276,7 +275,7 @@
             PREGNANCY_ASSISTANTS[5].title,
           ],
           detailsCount: 6,
-          enableDetails: true,
+          enableDetails: false,
         }
       ]
     },
