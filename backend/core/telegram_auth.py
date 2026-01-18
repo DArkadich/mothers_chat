@@ -23,6 +23,7 @@ def validate_init_data(init_data: str, bot_token: str) -> Dict[str, Any]:
     """
     if not bot_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Server misconfiguration: TELEGRAM_BOT_TOKEN not set")
+    bot_token = bot_token.strip()
 
     data = _parse_init_data(init_data)
     received_hash = data.pop("hash", None)
@@ -33,7 +34,11 @@ def validate_init_data(init_data: str, bot_token: str) -> Dict[str, Any]:
     data_check_list = [f"{k}={v}" for k, v in sorted(data.items())]
     data_check_string = "\n".join(data_check_list)
 
-    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    # Telegram WebApp initData:
+    # secret_key = HMAC_SHA256(key="WebAppData", msg=bot_token)
+    # hash = HMAC_SHA256(key=secret_key, msg=data_check_string)
+    # Source: Telegram docs (Web Apps / initData)
+    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
     hmac_obj = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256)
     computed_hash = hmac_obj.hexdigest()
 
@@ -53,10 +58,13 @@ def validate_init_data(init_data: str, bot_token: str) -> Dict[str, Any]:
 def validate_init_data_and_get_user_id(init_data: str, bot_token: str) -> str:
     """Validate Telegram WebApp initData and return user.id as str.
 
-    Follows Telegram docs: compute HMAC-SHA256 with secret = SHA256(bot_token)
+    Follows Telegram WebApp docs:
+    - secret_key = HMAC_SHA256(key="WebAppData", msg=bot_token)
+    - hash = HMAC_SHA256(key=secret_key, msg=data_check_string)
     over sorted key=value lines (excluding hash)."""
     if not bot_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Server misconfiguration: TELEGRAM_BOT_TOKEN not set")
+    bot_token = bot_token.strip()
 
     data = _parse_init_data(init_data)
     received_hash = data.pop("hash", None)
@@ -67,7 +75,7 @@ def validate_init_data_and_get_user_id(init_data: str, bot_token: str) -> str:
     data_check_list = [f"{k}={v}" for k, v in sorted(data.items())]
     data_check_string = "\n".join(data_check_list)
 
-    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
     hmac_obj = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256)
     computed_hash = hmac_obj.hexdigest()
 
