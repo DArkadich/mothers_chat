@@ -205,6 +205,15 @@
     { code: "kids_1_3_listening", title: "Когда ребёнок слушается", subtitle: "" },
   ];
 
+  const KIDS_3_7_ASSISTANTS = [
+    { code: "kids_3_7_self_doing", title: "Сам делает: шаг за шагом", subtitle: "" },
+    { code: "kids_3_7_kindergarten_no_tears", title: "В сад без слез", subtitle: "" },
+    { code: "kids_3_7_fighting_peace", title: "Когда ребёнок дерётся: мирный план", subtitle: "" },
+    { code: "kids_3_7_listen_finish", title: "Могу дослушать, могу доделать", subtitle: "" },
+    { code: "kids_3_7_scary_questions", title: "Когда ребёнок задаёт “страшные” вопросы", subtitle: "" },
+    { code: "kids_3_7_school_step_by_step", title: "Школа: шаг за шагом", subtitle: "" },
+  ];
+
   // Раздел "Беременным" — новый набор ассистентов.
   const PREGNANCY_ASSISTANTS = [
     { code: "pregnancy_beauty_mom", title: "Красивая беременность", subtitle: "Уход, стиль и уверенность — мягко и спокойно" },
@@ -219,6 +228,7 @@
     if (sectionKey === "pregnancy") return PREGNANCY_ASSISTANTS;
     if (sectionKey === "newborn_0_1") return NEWBORN_0_1_ASSISTANTS;
     if (sectionKey === "kids_1_3") return KIDS_1_3_ASSISTANTS;
+    if (sectionKey === "kids_3_7") return KIDS_3_7_ASSISTANTS;
     return [];
   }
 
@@ -370,7 +380,46 @@
         }
       ]
     },
-    { key: "kids_3_7", title: "Дети 3 - 7 лет (сад)", subtitle: "Речь, игры, концентрация и адаптация" },
+    {
+      key: "kids_3_7",
+      title: "Дети 3 - 7 лет (сад)",
+      subtitle: "Речь, игры, концентрация и адаптация",
+      mvp: true,
+      plans: [
+        {
+          name: "Basic",
+          gift: "+1 подарок",
+          items: [
+            KIDS_3_7_ASSISTANTS[0].title,
+            KIDS_3_7_ASSISTANTS[1].title,
+          ],
+          detailsCount: 2,
+          enableDetails: false,
+        },
+        {
+          name: "Smart",
+          gift: "+2 подарка",
+          items: [
+            "BASIC +",
+            KIDS_3_7_ASSISTANTS[2].title,
+            KIDS_3_7_ASSISTANTS[3].title,
+          ],
+          detailsCount: 4,
+          enableDetails: false,
+        },
+        {
+          name: "Pro",
+          gift: "+3 подарка",
+          items: [
+            "BASIC + SMART",
+            KIDS_3_7_ASSISTANTS[4].title,
+            KIDS_3_7_ASSISTANTS[5].title,
+          ],
+          detailsCount: 6,
+          enableDetails: false,
+        }
+      ]
+    },
     { key: "school_7_10", title: "Школьники 7 - 10 лет", subtitle: "Домашка, режим и отношения" },
     { key: "school_11_14", title: "Школьники 11 - 14 лет", subtitle: "Подростки, гаджеты, эмоции и будущее" },
     { key: "manykids", title: "Многодетным", subtitle: "Расписание, рутина, ресурсы и деньги" },
