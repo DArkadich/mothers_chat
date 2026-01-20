@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mamino</title>
+  <!-- Entry-point with a new filename to bypass Telegram WebView cache -->
+  <link rel="stylesheet" href="styles.css?v=20260120-2" />
+</head>
+
+<body>
+  <!-- фон для HOME (с девушкой) -->
+  <img class="bg-hero" src="/app/bg-hero.png" alt="" aria-hidden="true" id="bgHero" />
+  <!-- фон для внутренних экранов (без девушки) -->
+  <img class="bg-main" src="/app/bg-main.png" alt="" aria-hidden="true" id="bgMain" />
+
+  <div class="app" id="appRoot">
+
+    <!-- ============ ONBOARDING (показывается при первом заходе) ============ -->
+    <section id="screen-onboarding" class="screen">
+      <main class="onb">
+        <img class="onb__girl" src="/app/bg-hero.png" alt="" decoding="async" />
+
+        <header class="onb__head">
+          <div class="onb__brand">
+            <span class="onb__name">MAMIN</span>
+            <img class="onb__mark" src="/app/logo-mamino.png" alt="" />
+          </div>
+          <div class="onb__tagline">помощь маме, которая<br>всегда под рукой</div>
+        </header>
+
+        <section class="onb__card">
+          <p>Мы собрали лучших AI-ассистентов для мам: от беременности до подростков.</p>
+          <p>Они помогают, подсказывают, успокаивают и делают твою рутину легче.</p>
+        </section>
+
+        <section class="onb__cta">
+          <h2>ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?</h2>
+          <div class="onb__grid">
+            <button class="pill" data-demo-topic="sleep">сон младенца</button>
+            <button class="pill" data-demo-topic="colic">колики</button>
+            <button class="pill" data-demo-topic="crisis3">кризис 3х лет</button>
+            <button class="pill" data-demo-topic="talk">хочу поговорить</button>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <!-- ============ CARDS SCREEN (deck) ============ -->
+    <section id="screen-cards" class="screen">
+      <div class="deck">
+        <div class="card next" id="cardsNext" aria-hidden="true"></div>
+
+        <article class="card front" id="cardsFront">
+          <header class="card__header">
+            <div class="brand">MAMIN</div>
+            <h1 class="title" id="cardsTitle"></h1>
+          </header>
+          <div class="card__body" id="cardsBody"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ HOME (показывается при первом заходе) ============ -->
+    <main id="screen-home" class="screen screen--active">
+      <header class="header">
+        <div class="logo">
+          <span class="logo__word">MAMIN</span>
+          <img class="logo__o" src="/app/logo-mamino.png" alt="O" />
+        </div>
+
+        <div class="tagline">
+          <div class="tagline__line">ПОМОЩЬ МАМЕ, КОТОРАЯ</div>
+          <div class="tagline__line">ВСЕГДА ПОД РУКОЙ</div>
+        </div>
+      </header>
+
+      <section class="glass glass--copy" id="homeCopy">
+        <p class="copy">
+          Мы собрали лучших AI-ассистентов для мам: от беременности до подростков.
+          <br><br>
+          Они помогают, подсказывают, успокаивают и делают твою рутину легче.
+        </p>
+      </section>
+
+      <section class="section" id="homeQuestions">
+        <h2 class="section__title">ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?</h2>
+
+        <div class="chips">
+          <button class="chip" id="btnBabySleep" type="button">СОН МЛАДЕНЦА</button>
+          <button class="chip" type="button" disabled>КОЛИКИ</button>
+          <button class="chip" type="button" disabled>КРИЗИС 3Х ЛЕТ</button>
+          <button class="chip" type="button" disabled>ХОЧУ ПОГОВОРИТЬ</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ ASSISTANTS (аккордеон) ============ -->
+    <main id="screen-assistants" class="screen">
+      <section class="assistants">
+        <div id="assistantsList" class="assistants__list" aria-label="Список ассистентов"></div>
+      </section>
+    </main>
+
+    <!-- ============ PACKAGE (список ассистентов, входящих в пакет) ============ -->
+    <main id="screen-package" class="screen">
+      <section class="package glass">
+        <div class="package__head">
+          <div class="package__title" id="packageTitle">Пакет</div>
+          <button class="package__back" id="packageBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="package__list" id="packageList" aria-label="Ассистенты пакета"></div>
+
+        <div class="package__hint" id="packageHint">Выберите ассистента — откроется отдельный чат.</div>
+      </section>
+    </main>
+
+    <!-- ============ DETAILS (свайп/тап по ассистентам пакета) ============ -->
+    <main id="screen-details" class="screen">
+      <section class="details glass">
+        <div class="details__head">
+          <button class="details__nav details__nav--prev" id="detailsPrev" type="button" aria-label="Назад">‹</button>
+          <div class="details__title" id="detailsTitle">Беременным • Basic</div>
+          <button class="details__back" id="detailsBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="details__stage" id="detailsStage" aria-label="Карточка ассистента"></div>
+
+        <div class="details__footer">
+          <div class="details__hint">Тапните по карточке или свайпните влево →</div>
+          <div class="details__progress" id="detailsProgress">1 / 3</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ CHAT (персональный чат с ассистентом) ============ -->
+    <main id="screen-chat" class="screen">
+      <section class="chat glass">
+        <div class="chat__head">
+          <div class="chat__title" id="chatTitle">Чат</div>
+          <button class="chat__back" id="chatBack" type="button" aria-label="Назад">×</button>
+        </div>
+
+        <div class="chat__messages" id="chatMessages" aria-label="Сообщения"></div>
+
+        <form class="chat__composer" id="chatForm" autocomplete="off">
+          <input class="chat__input" id="chatInput" type="text" placeholder="Напишите сообщение…" />
+          <button class="chat__send" id="chatSend" type="submit">Отправить</button>
+        </form>
+
+        <div class="chat__status" id="chatStatus" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <!-- ============ TABBAR (inline SVG icons to avoid broken <img> in Telegram WebView) ============ -->
+    <nav class="tabbar" id="tabbar" aria-label="Навигация">
+      <button class="tabbar__btn tabbar__btn--active" id="tabAssistants" type="button">
+        <svg class="tabbar__icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+          <path fill="#fff" d="M28 6c10.49 0 19 7.387 19 16.5 0 9.114-8.51 16.5-19 16.5-1.92 0-3.775-.246-5.525-.707l-7.7 5.126a1.5 1.5 0 0 1-2.33-1.37l1.278-8.62C11.416 31.36 9 27.18 9 22.5 9 13.387 17.51 6 28 6Z" opacity=".92"/>
+          <path fill="#fff" d="M20 23a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" opacity=".92"/>
+        </svg>
+        <span class="tabbar__txt">ассистенты</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabFav" type="button" disabled>
+        <svg class="tabbar__icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+          <path fill="#fff" d="M28 48s-15-9.27-20.06-18.65C4.4 23.02 6.55 15.7 13.2 12.9c4.18-1.76 8.62-.55 11.1 2.2 2.48-2.75 6.92-3.96 11.1-2.2 6.65 2.8 8.8 10.12 5.26 16.45C43 38.73 28 48 28 48Z" opacity=".92"/>
+        </svg>
+        <span class="tabbar__txt">избранное</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabDream" type="button" disabled>
+        <svg class="tabbar__icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+          <path fill="#fff" d="M34.8 8.5c-6.9 1.3-12.1 7.4-12.1 14.6 0 8.2 6.6 14.8 14.8 14.8 2.1 0 4.1-.44 5.9-1.24C40.8 44.1 36.6 45.5 32 45.5 19.6 45.5 9.5 35.4 9.5 23 9.5 11.7 18 2.3 29 1.1c2.4-.27 4.1 2.11 2.7 4.3-1.4 2.2-2.1 4.8-2.1 7.5 0 3.3 1.1 6.3 3 8.8 0-5.8 4.1-11 10.2-12.2 2.6-.5 4.4 1.9 3.8 4.0Z" opacity=".92"/>
+          <path fill="#fff" d="M43 16l1.2 3.7H48l-3.1 2.2 1.2 3.7-3.1-2.2-3.1 2.2 1.2-3.7L38 19.7h3.8L43 16Z" opacity=".92"/>
+        </svg>
+        <span class="tabbar__txt">dream room</span>
+      </button>
+
+      <button class="tabbar__btn" id="tabProfile" type="button" disabled>
+        <svg class="tabbar__icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+          <path fill="#fff" d="M28 6c12.15 0 22 9.85 22 22s-9.85 22-22 22S6 40.15 6 28 15.85 6 28 6Zm0 6.5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15Zm0 19c-7.46 0-13.5 3.58-13.5 8v1.8A17.9 17.9 0 0 0 28 45.9c4.98 0 9.48-2 12.7-5.2v-1.2c0-4.42-6.04-8-12.7-8Z" opacity=".92"/>
+        </svg>
+        <span class="tabbar__txt">профиль</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="main.js?v=20260120-2"></script>
+</body>
+</html>
+
