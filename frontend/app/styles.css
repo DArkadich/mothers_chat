@@ -244,8 +244,7 @@ body::before{
 .tabbar__icon{
   width: 56px;
   height: 56px;
-  display: block;
-  object-fit: contain; /* применимо для <img>, не мешает <svg> */
+  object-fit: contain;
   opacity: .95;
 }
 
