@@ -214,6 +214,15 @@
     { code: "kids_3_7_school_step_by_step", title: "Школа: шаг за шагом", subtitle: "" },
   ];
 
+  const SCHOOL_7_10_ASSISTANTS = [
+    { code: "school_7_10_homework", title: "Домашка: шаг за шагом", subtitle: "" },
+    { code: "school_7_10_organized", title: "Организованный школьник", subtitle: "" },
+    { code: "school_7_10_explain_calm", title: "ОБЪЯСНЯЮ СПОКОЙНО", subtitle: "" },
+    { code: "school_7_10_bullying", title: "когда ребёнка обижают", subtitle: "" },
+    { code: "school_7_10_persistence", title: "усидчивость: шаг за шагом", subtitle: "" },
+    { code: "school_7_10_honest_talk", title: "я рядом: как говорить по-честному", subtitle: "" },
+  ];
+
   // Раздел "Беременным" — новый набор ассистентов.
   const PREGNANCY_ASSISTANTS = [
     { code: "pregnancy_beauty_mom", title: "Красивая беременность", subtitle: "Уход, стиль и уверенность — мягко и спокойно" },
@@ -229,6 +238,7 @@
     if (sectionKey === "newborn_0_1") return NEWBORN_0_1_ASSISTANTS;
     if (sectionKey === "kids_1_3") return KIDS_1_3_ASSISTANTS;
     if (sectionKey === "kids_3_7") return KIDS_3_7_ASSISTANTS;
+    if (sectionKey === "school_7_10") return SCHOOL_7_10_ASSISTANTS;
     return [];
   }
 
@@ -420,7 +430,46 @@
         }
       ]
     },
-    { key: "school_7_10", title: "Школьники 7 - 10 лет", subtitle: "Домашка, режим и отношения" },
+    {
+      key: "school_7_10",
+      title: "Школьники 7 - 10 лет",
+      subtitle: "Домашка, режим и отношения",
+      mvp: true,
+      plans: [
+        {
+          name: "Basic",
+          gift: "+1 подарок",
+          items: [
+            SCHOOL_7_10_ASSISTANTS[0].title,
+            SCHOOL_7_10_ASSISTANTS[1].title,
+          ],
+          detailsCount: 2,
+          enableDetails: false,
+        },
+        {
+          name: "Smart",
+          gift: "+2 подарка",
+          items: [
+            "BASIC +",
+            SCHOOL_7_10_ASSISTANTS[2].title,
+            SCHOOL_7_10_ASSISTANTS[3].title,
+          ],
+          detailsCount: 4,
+          enableDetails: false,
+        },
+        {
+          name: "Pro",
+          gift: "+3 подарка",
+          items: [
+            "BASIC + SMART",
+            SCHOOL_7_10_ASSISTANTS[4].title,
+            SCHOOL_7_10_ASSISTANTS[5].title,
+          ],
+          detailsCount: 6,
+          enableDetails: false,
+        }
+      ]
+    },
     { key: "school_11_14", title: "Школьники 11 - 14 лет", subtitle: "Подростки, гаджеты, эмоции и будущее" },
     { key: "manykids", title: "Многодетным", subtitle: "Расписание, рутина, ресурсы и деньги" },
     { key: "solo", title: "Соло - мамам", subtitle: "Опора, отношения и финансовая грамотность" },
