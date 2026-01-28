@@ -232,6 +232,15 @@
     { code: "school_11_14_secrets", title: "Когда появляются секреты", subtitle: "" },
   ];
 
+  const MANYKIDS_ASSISTANTS = [
+    { code: "manykids_family_system", title: "Семейная система", subtitle: "" },
+    { code: "manykids_household_flow", title: "Быт без перегруза", subtitle: "" },
+    { code: "manykids_mom_pauses", title: "Паузы для мамы", subtitle: "" },
+    { code: "manykids_financial_peace", title: "Финансовое спокойствие семьи", subtitle: "" },
+    { code: "manykids_mom_time", title: "Мамино время", subtitle: "" },
+    { code: "manykids_delegation", title: "Грамотное делегирование", subtitle: "" },
+  ];
+
   // Раздел "Беременным" — новый набор ассистентов.
   const PREGNANCY_ASSISTANTS = [
     { code: "pregnancy_beauty_mom", title: "Красивая беременность", subtitle: "Уход, стиль и уверенность — мягко и спокойно" },
@@ -249,6 +258,7 @@
     if (sectionKey === "kids_3_7") return KIDS_3_7_ASSISTANTS;
     if (sectionKey === "school_7_10") return SCHOOL_7_10_ASSISTANTS;
     if (sectionKey === "school_11_14") return SCHOOL_11_14_ASSISTANTS;
+    if (sectionKey === "manykids") return MANYKIDS_ASSISTANTS;
     return [];
   }
 
@@ -520,7 +530,46 @@
         }
       ]
     },
-    { key: "manykids", title: "Многодетным", subtitle: "Расписание, рутина, ресурсы и деньги" },
+    {
+      key: "manykids",
+      title: "Многодетным",
+      subtitle: "Расписание, рутина, ресурсы и деньги",
+      mvp: true,
+      plans: [
+        {
+          name: "Basic",
+          gift: "+1 подарок",
+          items: [
+            MANYKIDS_ASSISTANTS[0].title,
+            MANYKIDS_ASSISTANTS[1].title,
+          ],
+          detailsCount: 2,
+          enableDetails: false,
+        },
+        {
+          name: "Smart",
+          gift: "+2 подарка",
+          items: [
+            "BASIC +",
+            MANYKIDS_ASSISTANTS[2].title,
+            MANYKIDS_ASSISTANTS[3].title,
+          ],
+          detailsCount: 4,
+          enableDetails: false,
+        },
+        {
+          name: "Pro",
+          gift: "+3 подарка",
+          items: [
+            "BASIC + SMART",
+            MANYKIDS_ASSISTANTS[4].title,
+            MANYKIDS_ASSISTANTS[5].title,
+          ],
+          detailsCount: 6,
+          enableDetails: false,
+        }
+      ]
+    },
     { key: "solo", title: "Соло - мамам", subtitle: "Опора, отношения и финансовая грамотность" },
     { key: "wishlist", title: "Карта желаний мамы", subtitle: "Мечты, планы и свои желания" }
   ];
