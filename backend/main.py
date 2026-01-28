@@ -1,8 +1,8 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import uuid
 
@@ -104,6 +104,10 @@ class ChatHistoryRequest(BaseModel):
 
 class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageDTO]
+
+
+class WishlistGenerateResponse(BaseModel):
+    image_b64: str
 
 # ----------------------------
 # DB dependency
@@ -318,3 +322,49 @@ def chat_send(payload: ChatSendRequest, db: Session = Depends(get_db)):
             if m.role != "system"
         ]
     )
+
+
+@app.post("/wishlist/generate", response_model=WishlistGenerateResponse)
+async def wishlist_generate(
+    prompt: str = Form(...),
+    image: UploadFile = File(...),
+    init_data: Optional[str] = Form(None),
+):
+    """
+    Генерация изображения для карты желаний на основе фото пользователя и текстового запроса.
+
+    - prompt: текст запроса (например, "Сделай меня на Мальдивах")
+    - image: фотография пользователя (jpg/png/webp <= 50MB)
+    - init_data: Telegram init data (пока не используется, но оставлено для будущей валидации)
+    """
+    import io
+
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    if not openai_client:
+        raise HTTPException(status_code=500, detail="OpenAI client is not configured")
+
+    try:
+        raw_bytes = await image.read()
+        if not raw_bytes:
+            raise HTTPException(status_code=400, detail="Пустой файл изображения")
+
+        # Используем GPT Image для редактирования/пересборки изображения с сохранением черт лица
+        result = openai_client.images.edit(
+            model="gpt-image-1.5",
+            image=[io.BytesIO(raw_bytes)],
+            prompt=prompt,
+            size="1024x1024",
+            output_format="png",
+            input_fidelity="high",
+        )
+
+        if not result.data or not getattr(result.data[0], "b64_json", None):
+            raise HTTPException(status_code=500, detail="OpenAI не вернул изображение")
+
+        return WishlistGenerateResponse(image_b64=result.data[0].b64_json)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI image error: {str(e)}")
