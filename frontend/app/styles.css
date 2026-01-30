@@ -629,6 +629,7 @@ body::before{
 /* ============ CHAT ============ */
 
 .chat{
+  position: relative;
   margin-top: 18px;
   padding: 16px;
 }
@@ -764,6 +765,50 @@ body::before{
   min-height: 16px;
 }
 
+/* оверлей лимита демо-чата */
+.chatDemoLimitOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 122, 123, .92);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s, visibility .25s;
+}
+.chatDemoLimitOverlay.chatDemoLimitOverlay--visible {
+  opacity: 1;
+  visibility: visible;
+}
+.chatDemoLimitOverlay__content {
+  text-align: center;
+  max-width: 320px;
+}
+.chatDemoLimitOverlay__text {
+  margin: 0 0 20px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: rgba(255,255,255,.95);
+}
+.chatDemoLimitOverlay__btn {
+  display: inline-block;
+  padding: 14px 24px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bg-bot);
+  background: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chatDemoLimitOverlay__btn:hover { background: rgba(255,255,255,.95); }
+.chatDemoLimitOverlay__btn:active { transform: translateY(1px); }
+
 /* ============ ONBOARDING ============ */
 
 /* tabbar visibility (JS toggles .tabbar--hidden) */
@@ -815,7 +860,23 @@ body::before{
 }
 
 .onb__cta { position: relative; margin-top: 26px; text-align: center; }
-.onb__cta h2 { font-size: 14px; letter-spacing: .08em; margin: 0 0 12px; font-weight: 600; }
+.onb__cta h2 { font-size: 14px; letter-spacing: .08em; margin: 0 0 8px; font-weight: 600; }
+.onb__hint { font-size: 13px; color: var(--txt-soft); margin: 0 0 14px; line-height: 1.4; }
+.onb__skip {
+  display: block;
+  margin: 18px auto 0;
+  padding: 10px 16px;
+  font-family: var(--font);
+  font-size: 14px;
+  color: rgba(255,255,255,.9);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.onb__skip:hover { background: rgba(255,255,255,.06); }
+.onb__skip:active { opacity: .9; }
 
 .onb__grid {
   display: grid;

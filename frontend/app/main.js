@@ -68,7 +68,10 @@
       list: [],
       index: 0,
       returnTo: { screen: "assistants", openKey: null }
-    }
+    },
+    isDemoSession: false,
+    demoMessageLimit: 15,
+    chatReturnScreen: null
   };
 
   // =========================
@@ -874,12 +877,19 @@
       // Источник истины — история с backend
       if (Array.isArray(data?.messages)) {
         renderChatHistory(data.messages);
+        if (state.isDemoSession && data.messages.length >= state.demoMessageLimit) {
+          showDemoLimitOverlay();
+        }
         return;
       }
 
       const reply = data?.reply;
       if (typeof reply === "string" && reply.length > 0) {
         appendChatBubble("assistant", reply);
+        if (state.isDemoSession) {
+          const total = chatMessagesEl?.querySelectorAll(".chat__msg")?.length || 0;
+          if (total >= state.demoMessageLimit) showDemoLimitOverlay();
+        }
       } else {
         setChatStatus("Ошибка: пустой ответ модели");
       }
@@ -1279,30 +1289,57 @@
   }
 
   // =========================
-  // ONBOARDING
+  // ONBOARDING (демо: 4 тестовых ассистента, лимит 10–15 фраз, затем CTA в полное приложение)
   // =========================
 
+  const DEMO_TOPIC_TO_ASSISTANT = {
+    sleep: { code: "pregnancy_sleep", title: "Малыш спит сладко" },
+    colic: { code: "pregnancy_crying", title: "Почему малыш плачет" },
+    crisis3: { code: "kids_1_3_crisis3", title: "Кризис трёх лет" },
+    talk: { code: "kids_1_3_listening", title: "Когда ребёнок слушается" }
+  };
+
   function openDemoChat(topicId) {
+    const assistant = DEMO_TOPIC_TO_ASSISTANT[topicId];
+    if (!assistant) {
+      setActiveScreen("assistants");
+      return;
+    }
+    state.isDemoSession = true;
+    state.chatReturnScreen = "onboarding";
+    openChatUi(assistant.code, assistant.title);
+  }
+
+  function goToCatalogFromOnboarding() {
     localStorage.setItem("onboarded", "1");
     state.onboarded = true;
+    setActiveScreen("assistants");
+  }
 
-    // Маппинг topicId на ассистентов
-    const topicMap = {
-      "sleep": "newborn_0_1", // сон младенца -> секция "Малыши 0-1 год"
-      "colic": "newborn_0_1", // колики -> секция "Малыши 0-1 год"
-      "crisis3": "kids_1_3", // кризис 3х лет -> секция "Малыши 1-3 года"
-      "talk": null // хочу поговорить -> можно показать список ассистентов
-    };
+  function showDemoLimitOverlay() {
+    const overlay = document.getElementById("chatDemoLimitOverlay");
+    if (overlay) overlay.classList.add("chatDemoLimitOverlay--visible");
+    if (chatInputEl) chatInputEl.disabled = true;
+    const sendBtn = chatFormEl?.querySelector('button[type="submit"]');
+    if (sendBtn) sendBtn.disabled = true;
+  }
 
-    const sectionKey = topicMap[topicId];
-    if (sectionKey) {
-      // Переход к секции ассистентов
-      setActiveScreen("assistants");
-      openAccordion(sectionKey);
-    } else {
-      // По умолчанию показываем ассистентов
-      setActiveScreen("assistants");
-    }
+  function hideDemoLimitOverlay() {
+    const overlay = document.getElementById("chatDemoLimitOverlay");
+    if (overlay) overlay.classList.remove("chatDemoLimitOverlay--visible");
+    if (chatInputEl) chatInputEl.disabled = false;
+    const sendBtn = chatFormEl?.querySelector('button[type="submit"]');
+    if (sendBtn) sendBtn.disabled = false;
+  }
+
+  function goToAssistantsFromDemoLimit() {
+    localStorage.setItem("onboarded", "1");
+    state.onboarded = true;
+    state.isDemoSession = false;
+    state.chatReturnScreen = null;
+    hideDemoLimitOverlay();
+    setChatStatus("");
+    setActiveScreen("assistants");
   }
 
   // =========================
@@ -1542,8 +1579,17 @@
     });
 
     chatBackEl?.addEventListener("click", () => {
-      setActiveScreen("package");
+      if (state.chatReturnScreen === "onboarding") {
+        state.isDemoSession = false;
+        state.chatReturnScreen = null;
+        showScreen("screen-onboarding");
+      } else {
+        setActiveScreen("package");
+      }
     });
+
+    document.getElementById("chatDemoLimitBtn")?.addEventListener("click", goToAssistantsFromDemoLimit);
+    document.getElementById("onbSkipCatalog")?.addEventListener("click", goToCatalogFromOnboarding);
 
     chatFormEl?.addEventListener("submit", (e) => {
       e.preventDefault();

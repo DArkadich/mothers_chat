@@ -35,12 +35,14 @@
 
         <section class="onb__cta">
           <h2>ЧТО БЕСПОКОИТ ПРЯМО СЕЙЧАС?</h2>
+          <p class="onb__hint">Попробуйте одного из ассистентов — это бесплатный демо-чат.</p>
           <div class="onb__grid">
-            <button class="pill" data-demo-topic="sleep">сон младенца</button>
-            <button class="pill" data-demo-topic="colic">колики</button>
-            <button class="pill" data-demo-topic="crisis3">кризис 3х лет</button>
-            <button class="pill" data-demo-topic="talk">хочу поговорить</button>
+            <button class="pill" data-demo-topic="sleep" type="button">сон младенца</button>
+            <button class="pill" data-demo-topic="colic" type="button">колики</button>
+            <button class="pill" data-demo-topic="crisis3" type="button">кризис 3х лет</button>
+            <button class="pill" data-demo-topic="talk" type="button">хочу поговорить</button>
           </div>
+          <button class="onb__skip" id="onbSkipCatalog" type="button">Смотреть каталог ассистентов</button>
         </section>
       </main>
     </section>
@@ -153,6 +155,13 @@
         </form>
 
         <div class="chat__status" id="chatStatus" aria-live="polite"></div>
+
+        <div class="chatDemoLimitOverlay" id="chatDemoLimitOverlay" aria-hidden="true">
+          <div class="chatDemoLimitOverlay__content">
+            <p class="chatDemoLimitOverlay__text">Вы попробовали демо. Чтобы общаться без ограничений, откройте полный каталог ассистентов.</p>
+            <button class="chatDemoLimitOverlay__btn" id="chatDemoLimitBtn" type="button">Перейти к ассистентам</button>
+          </div>
+        </div>
       </section>
     </main>
 
