@@ -62,7 +62,7 @@
   // State
   // =========================
   const state = {
-    onboarded: localStorage.getItem("onboarded") === "1",
+    onboarded: false, // заполняется в boot() из API или localStorage
     currentScreen: null,
     cards: {
       list: [],
@@ -650,6 +650,30 @@
       throw new Error("init_data is required");
     }
     return { init_data: initData };
+  }
+
+  /** Получить статус онбординга: сначала с бэкенда (по init_data), при ошибке — из localStorage. */
+  async function fetchOnboardedStatus() {
+    const initData = getInitData();
+    if (initData) {
+      try {
+        const data = await apiPost("/onboarded", { init_data: initData });
+        if (data && data.onboarded === true) return true;
+      } catch (e) {
+        console.warn("[mamino] onboarded status from API failed, using localStorage:", e?.message);
+      }
+    }
+    return localStorage.getItem("onboarded") === "1";
+  }
+
+  /** Пометить онбординг пройденным: отправить на бэкенд (если есть init_data) и в localStorage. */
+  function setOnboardedComplete() {
+    const initData = getInitData();
+    if (initData) {
+      apiPost("/onboarded", { init_data: initData, complete: true }).catch(() => {});
+    }
+    localStorage.setItem("onboarded", "1");
+    state.onboarded = true;
   }
 
   function showTelegramOnlyMessage() {
@@ -1305,14 +1329,20 @@
       setActiveScreen("assistants");
       return;
     }
+    try {
+      getAuthPayload();
+    } catch (e) {
+      setOnboardedComplete();
+      setActiveScreen("assistants");
+      return;
+    }
     state.isDemoSession = true;
     state.chatReturnScreen = "onboarding";
     openChatUi(assistant.code, assistant.title);
   }
 
   function goToCatalogFromOnboarding() {
-    localStorage.setItem("onboarded", "1");
-    state.onboarded = true;
+    setOnboardedComplete();
     setActiveScreen("assistants");
   }
 
@@ -1333,8 +1363,7 @@
   }
 
   function goToAssistantsFromDemoLimit() {
-    localStorage.setItem("onboarded", "1");
-    state.onboarded = true;
+    setOnboardedComplete();
     state.isDemoSession = false;
     state.chatReturnScreen = null;
     hideDemoLimitOverlay();
@@ -1599,12 +1628,16 @@
       sendChatMessage(v); // ошибки обрабатываются внутри sendChatMessage
     });
 
-    // Обработчик кнопок онбординга
+    // Обработчик кнопок онбординга (4 темы + кнопка «Смотреть каталог» отдельно)
     document.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-demo-topic]");
       if (!btn) return;
       e.preventDefault();
-      openDemoChat(btn.getAttribute("data-demo-topic"));
+      e.stopPropagation();
+      const topicId = btn.getAttribute("data-demo-topic");
+      if (!topicId) return;
+      setOnboardedComplete(); // чтобы при следующем заходе онбординг не показывался
+      openDemoChat(topicId);
     });
 
     // Делегирование событий для data-open-cards (дополнительная поддержка)
@@ -1639,16 +1672,14 @@
   }
 
   // Boot
-  function boot() {
+  async function boot() {
     setupTelegramUi();
-    // Строгий режим: без initData считаем, что приложение открыто вне Telegram
     if (tg && !getInitData()) {
       console.warn("[mamino] initData пустой: откройте приложение внутри Telegram.");
     }
     renderAssistants();
     wireEvents();
-    
-    // Показываем онбординг, если пользователь еще не прошел его
+    state.onboarded = await fetchOnboardedStatus();
     if (!state.onboarded) {
       showScreen("screen-onboarding");
     } else {
@@ -1656,5 +1687,5 @@
     }
   }
 
-  boot();
+  boot().catch((e) => console.error("[mamino] boot error:", e));
 })();

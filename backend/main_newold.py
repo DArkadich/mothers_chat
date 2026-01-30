@@ -148,6 +148,15 @@ class PackageDetailsResponse(BaseModel):
     details_cards: List[DetailCardItem]
 
 
+class OnboardedRequest(BaseModel):
+    init_data: str = Field(..., description="Telegram WebApp initData for auth.")
+    complete: bool = Field(default=False, description="If true, mark onboarding as completed.")
+
+
+class OnboardedResponse(BaseModel):
+    onboarded: bool
+
+
 # ==============
 # ВСПОМОГАТЕЛЬНОЕ
 # ==============
@@ -247,6 +256,38 @@ async def global_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, HTTPException):
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
+# =====================
+# ОНБОРДИНГ (флаг «уже видел онбординг» по пользователю)
+# =====================
+
+@app.post("/api/onboarded", response_model=OnboardedResponse)
+def onboarded_status_or_complete(
+    payload: OnboardedRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    GET-режим: body { init_data } → { onboarded: bool }.
+    SET-режим: body { init_data, complete: true } → помечает онбординг пройденным, возвращает { onboarded: true }.
+    """
+    from sqlalchemy import inspect
+
+    current_user = resolve_user_from_init_data(payload.init_data, db)
+    cols = [c["name"] for c in inspect(engine).get_columns("users")]
+    if "profile" not in cols:
+        return OnboardedResponse(onboarded=False)
+
+    profile = dict(getattr(current_user, "profile", None) or {})
+    if payload.complete:
+        profile["onboarded"] = True
+        current_user.profile = profile
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(current_user, "profile")
+        db.commit()
+        db.refresh(current_user)
+        return OnboardedResponse(onboarded=True)
+    return OnboardedResponse(onboarded=bool(profile.get("onboarded")))
 
 
 # =====================
