@@ -852,6 +852,11 @@
     } catch (e) {
       const m = String(e?.message || "");
       if (m.includes("init_data") || m.includes("initData")) {
+        if (state.chatReturnScreen === "onboarding") {
+          setOnboardedComplete();
+          setActiveScreen("assistants");
+          return;
+        }
         showTelegramOnlyMessage();
         return;
       }
@@ -873,7 +878,19 @@
       .catch((e) => {
         const m = String(e?.message || "");
         if (m.includes("init_data") || m.includes("initData")) {
+          if (state.chatReturnScreen === "onboarding") {
+            setOnboardedComplete();
+            setActiveScreen("assistants");
+            return;
+          }
           showTelegramOnlyMessage();
+          return;
+        }
+        if (state.chatReturnScreen === "onboarding") {
+          setOnboardedComplete();
+          state.chatReturnScreen = null;
+          state.isDemoSession = false;
+          setActiveScreen("assistants");
           return;
         }
         setChatStatus(`Ошибка: ${formatError(e)}`);
@@ -1687,5 +1704,10 @@
     }
   }
 
-  boot().catch((e) => console.error("[mamino] boot error:", e));
+  boot().catch((e) => {
+    console.error("[mamino] boot error:", e);
+    state.onboarded = localStorage.getItem("onboarded") === "1";
+    if (state.onboarded) setActiveScreen("home");
+    else showScreen("screen-onboarding");
+  });
 })();
