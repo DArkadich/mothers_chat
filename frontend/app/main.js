@@ -138,6 +138,14 @@
       return;
     }
 
+    if (name === "wishlist") {
+      showScreen("screen-wishlist");
+      setBg("inner");
+      setTabbarVisible(true);
+      setActiveTab("tabAssistants");
+      return;
+    }
+
     if (name === "home") {
       screenHome?.classList.add("screen--active");
       setBg("home");
@@ -1323,7 +1331,13 @@
       item.appendChild(head);
       item.appendChild(body);
 
-      head.addEventListener("click", () => toggleAccordion(s.key));
+      head.addEventListener("click", () => {
+        if (s.key === "wishlist") {
+          setActiveScreen("wishlist");
+          return;
+        }
+        toggleAccordion(s.key);
+      });
 
       assistantsListEl.appendChild(item);
     });
@@ -1622,6 +1636,65 @@
       openAccordion(openKey);
       const node = assistantsListEl?.querySelector(`.acc[data-key="${CSS.escape(openKey)}"]`);
       node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // Карта желаний
+    const wishlistBack = document.getElementById("wishlistBack");
+    const wishlistFile = document.getElementById("wishlistFile");
+    const wishlistFileBtn = document.getElementById("wishlistFileBtn");
+    const wishlistFileName = document.getElementById("wishlistFileName");
+    const wishlistPrompt = document.getElementById("wishlistPrompt");
+    const wishlistForm = document.getElementById("wishlistForm");
+    const wishlistSubmit = document.getElementById("wishlistSubmit");
+    const wishlistStatus = document.getElementById("wishlistStatus");
+    const wishlistResult = document.getElementById("wishlistResult");
+
+    wishlistBack?.addEventListener("click", () => setActiveScreen("assistants"));
+    wishlistFileBtn?.addEventListener("click", () => wishlistFile?.click());
+    wishlistFile?.addEventListener("change", () => {
+      if (wishlistFileName) wishlistFileName.textContent = wishlistFile.files?.[0]?.name || "";
+    });
+
+    wishlistForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!wishlistFile?.files?.[0] || !wishlistPrompt?.value?.trim()) {
+        if (wishlistStatus) wishlistStatus.textContent = "Выберите фото и опишите желание.";
+        return;
+      }
+      const formData = new FormData();
+      formData.append("prompt", wishlistPrompt.value.trim());
+      formData.append("image", wishlistFile.files[0]);
+      const initData = getInitData();
+      if (initData) formData.append("init_data", initData);
+
+      if (wishlistStatus) wishlistStatus.textContent = "Создаём изображение…";
+      if (wishlistSubmit) wishlistSubmit.disabled = true;
+      if (wishlistResult) wishlistResult.innerHTML = "";
+
+      try {
+        const res = await fetch(`${API_BASE}/wishlist/generate`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = data?.detail
+            ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+            : "Ошибка " + res.status;
+          if (wishlistStatus) wishlistStatus.textContent = msg;
+          return;
+        }
+        if (data?.image_b64 && wishlistResult) {
+          wishlistResult.innerHTML = `<img src="data:image/png;base64,${data.image_b64}" alt="Ваша карта желаний" />`;
+          if (wishlistStatus) wishlistStatus.textContent = "Готово!";
+        } else {
+          if (wishlistStatus) wishlistStatus.textContent = "Не удалось получить изображение.";
+        }
+      } catch (err) {
+        if (wishlistStatus) wishlistStatus.textContent = "Ошибка: " + (err?.message || "нет связи");
+      } finally {
+        if (wishlistSubmit) wishlistSubmit.disabled = false;
+      }
     });
 
     chatBackEl?.addEventListener("click", () => {

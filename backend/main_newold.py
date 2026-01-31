@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import List, Literal, Optional, Any
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, File, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,13 +49,21 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Инициализация клиента OpenAI
+# Инициализация клиента OpenAI (чат)
 openai_client = None
 if OPENAI_API_KEY and not ENABLE_FAKE_OPENAI:
     try:
         openai_client = OpenAIClient(api_key=OPENAI_API_KEY, model=OPENAI_MODEL)
     except Exception:
         openai_client = None
+
+# Клиент OpenAI для Images API (карта желаний)
+openai_images_client = None
+if OPENAI_API_KEY:
+    try:
+        openai_images_client = OpenAI(api_key=OPENAI_API_KEY)
+    except Exception:
+        openai_images_client = None
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -155,6 +163,10 @@ class OnboardedRequest(BaseModel):
 
 class OnboardedResponse(BaseModel):
     onboarded: bool
+
+
+class WishlistGenerateResponse(BaseModel):
+    image_b64: str
 
 
 # ==============
@@ -288,6 +300,51 @@ def onboarded_status_or_complete(
         db.refresh(current_user)
         return OnboardedResponse(onboarded=True)
     return OnboardedResponse(onboarded=bool(profile.get("onboarded")))
+
+
+# =====================
+# КАРТА ЖЕЛАНИЙ (генерация изображения по фото + промпт)
+# =====================
+
+@app.post("/api/wishlist/generate", response_model=WishlistGenerateResponse)
+async def wishlist_generate(
+    prompt: str = Form(...),
+    image: UploadFile = File(...),
+    init_data: Optional[str] = Form(None),
+):
+    """
+    Генерация изображения для карты желаний: фото пользователя + текстовый запрос.
+    Возвращает PNG в base64.
+    """
+    import io
+
+    if not OPENAI_API_KEY or not openai_images_client:
+        raise HTTPException(status_code=500, detail="Сервис генерации изображений недоступен")
+
+    try:
+        raw_bytes = await image.read()
+        if not raw_bytes:
+            raise HTTPException(status_code=400, detail="Пустой файл изображения")
+
+        result = openai_images_client.images.edit(
+            model="gpt-image-1.5",
+            image=[io.BytesIO(raw_bytes)],
+            prompt=prompt,
+            size="1024x1024",
+            output_format="png",
+            input_fidelity="high",
+        )
+
+        if not result.data or not getattr(result.data[0], "b64_json", None):
+            raise HTTPException(status_code=500, detail="Не удалось сгенерировать изображение")
+
+        return WishlistGenerateResponse(image_b64=result.data[0].b64_json)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("wishlist generate error: %s", e)
+        raise HTTPException(status_code=500, detail=f"Ошибка генерации: {str(e)}")
 
 
 # =====================

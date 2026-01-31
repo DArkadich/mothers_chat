@@ -166,6 +166,28 @@
     </main>
 
 
+    <!-- ============ КАРТА ЖЕЛАНИЙ (фото + промпт → изображение) ============ -->
+    <main id="screen-wishlist" class="screen">
+      <section class="wishlist glass">
+        <div class="wishlist__head">
+          <div class="wishlist__title">Карта желаний мамы</div>
+          <button class="wishlist__back" id="wishlistBack" type="button" aria-label="Назад">×</button>
+        </div>
+        <p class="wishlist__hint">Загрузите своё фото и опишите желание — мы создадим изображение для вашей карты желаний.</p>
+        <form class="wishlist__form" id="wishlistForm">
+          <input type="file" id="wishlistFile" accept="image/jpeg,image/png,image/webp" class="wishlist__file" aria-label="Выбрать фото" />
+          <button type="button" id="wishlistFileBtn" class="wishlist__fileBtn">Выбрать фото</button>
+          <span class="wishlist__fileName" id="wishlistFileName"></span>
+          <label class="wishlist__label" for="wishlistPrompt">Опишите желание</label>
+          <textarea id="wishlistPrompt" class="wishlist__prompt" placeholder="Например: Я на Мальдивах на пляже" rows="3"></textarea>
+          <button type="submit" id="wishlistSubmit" class="wishlist__submit">Создать изображение</button>
+        </form>
+        <div class="wishlist__status" id="wishlistStatus" aria-live="polite"></div>
+        <div class="wishlist__result" id="wishlistResult"></div>
+      </section>
+    </main>
+
+
     <!-- ============ TABBAR (иконки заказчика) ============ -->
     <nav class="tabbar" id="tabbar" aria-label="Навигация">
       <button class="tabbar__btn tabbar__btn--active" id="tabAssistants" type="button">
@@ -192,6 +214,6 @@
   </div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="main.js?v=20260125-onboard"></script>
+  <script src="main.js?v=20260125-wishlist"></script>
 </body>
 </html>
