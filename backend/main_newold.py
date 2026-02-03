@@ -342,7 +342,7 @@ async def wishlist_generate(
         )
 
         result = openai_images_client.images.edit(
-            model="gpt-image-1",
+            model="gpt-image-1.5",
             image=(filename, io.BytesIO(raw_bytes), content_type),
             prompt=enhanced_prompt,
             size="1024x1024",
