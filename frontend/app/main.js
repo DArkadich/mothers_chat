@@ -1655,15 +1655,54 @@
       if (wishlistFileName) wishlistFileName.textContent = wishlistFile.files?.[0]?.name || "";
     });
 
+    /** Сжимает изображение до max 1024px и ~500KB, чтобы избежать 413. */
+    function compressImageForWishlist(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const MAX = 1024;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+            else { w = Math.round(w * MAX / h); h = MAX; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            (blob) => resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }) : file),
+            "image/jpeg",
+            0.85
+          );
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Не удалось загрузить изображение")); };
+        img.src = url;
+      });
+    }
+
     wishlistForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!wishlistFile?.files?.[0] || !wishlistPrompt?.value?.trim()) {
         if (wishlistStatus) wishlistStatus.textContent = "Выберите фото и опишите желание.";
         return;
       }
+      if (wishlistStatus) wishlistStatus.textContent = "Подготавливаем фото…";
+      if (wishlistSubmit) wishlistSubmit.disabled = true;
+      let imageFile;
+      try {
+        imageFile = await compressImageForWishlist(wishlistFile.files[0]);
+      } catch (err) {
+        if (wishlistStatus) wishlistStatus.textContent = "Ошибка: " + (err?.message || "не удалось обработать фото");
+        if (wishlistSubmit) wishlistSubmit.disabled = false;
+        return;
+      }
       const formData = new FormData();
       formData.append("prompt", wishlistPrompt.value.trim());
-      formData.append("image", wishlistFile.files[0]);
+      formData.append("image", imageFile);
       const initData = getInitData();
       if (initData) formData.append("init_data", initData);
 
@@ -1678,9 +1717,10 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const msg = data?.detail
+          let msg = data?.detail
             ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
             : "Ошибка " + res.status;
+          if (res.status === 413) msg = "Фото слишком большое. Попробуйте другое изображение.";
           if (wishlistStatus) wishlistStatus.textContent = msg;
           return;
         }
