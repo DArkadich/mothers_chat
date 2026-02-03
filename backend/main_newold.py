@@ -346,7 +346,6 @@ async def wishlist_generate(
             image=(filename, io.BytesIO(raw_bytes), content_type),
             prompt=enhanced_prompt,
             size="1024x1024",
-            input_fidelity="high",
             quality="low",
         )
 
