@@ -328,7 +328,7 @@ async def wishlist_generate(
             raise HTTPException(status_code=400, detail="Пустой файл изображения")
 
         result = openai_images_client.images.edit(
-            model="gpt-image-1.5",
+            model="gpt-image-1",
             image=io.BytesIO(raw_bytes),
             prompt=prompt,
             size="1024x1024",
