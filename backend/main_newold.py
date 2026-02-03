@@ -334,11 +334,20 @@ async def wishlist_generate(
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
             filename = "image.jpg"
 
+        # Префикс помогает модели сгенерировать полную сцену с лицом из фото, а не только фон
+        enhanced_prompt = (
+            f"Create a full photorealistic scene with this person in it. "
+            f"Preserve the person's face exactly as in the photo. "
+            f"Scene description: {prompt}"
+        )
+
         result = openai_images_client.images.edit(
             model="gpt-image-1",
             image=(filename, io.BytesIO(raw_bytes), content_type),
-            prompt=prompt,
+            prompt=enhanced_prompt,
             size="1024x1024",
+            input_fidelity="high",
+            quality="high",
         )
 
         if not result.data or not getattr(result.data[0], "b64_json", None):

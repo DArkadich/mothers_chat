@@ -173,13 +173,13 @@
           <div class="wishlist__title">Карта желаний мамы</div>
           <button class="wishlist__back" id="wishlistBack" type="button" aria-label="Назад">×</button>
         </div>
-        <p class="wishlist__hint">Загрузите своё фото и опишите желание — мы создадим изображение для вашей карты желаний.</p>
+        <p class="wishlist__hint">Загрузите своё фото (лицо чётко видно) и опишите сцену — мы создадим изображение с вашим лицом в этой обстановке.</p>
         <form class="wishlist__form" id="wishlistForm">
           <input type="file" id="wishlistFile" accept="image/jpeg,image/png,image/webp" class="wishlist__file" aria-label="Выбрать фото" />
           <button type="button" id="wishlistFileBtn" class="wishlist__fileBtn">Выбрать фото</button>
           <span class="wishlist__fileName" id="wishlistFileName"></span>
-          <label class="wishlist__label" for="wishlistPrompt">Опишите желание</label>
-          <textarea id="wishlistPrompt" class="wishlist__prompt" placeholder="Например: Я на Мальдивах на пляже" rows="3"></textarea>
+          <label class="wishlist__label" for="wishlistPrompt">Опишите сцену целиком</label>
+          <textarea id="wishlistPrompt" class="wishlist__prompt" placeholder="Например: Я на тропическом пляже на Мальдивах, в летнем платье, с коктейлем в руке, фотографичный стиль" rows="3"></textarea>
           <button type="submit" id="wishlistSubmit" class="wishlist__submit">Создать изображение</button>
         </form>
         <div class="wishlist__status" id="wishlistStatus" aria-live="polite"></div>
