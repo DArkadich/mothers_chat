@@ -347,7 +347,7 @@ async def wishlist_generate(
             prompt=enhanced_prompt,
             size="1024x1024",
             input_fidelity="high",
-            quality="high",
+            quality="low",
         )
 
         if not result.data or not getattr(result.data[0], "b64_json", None):
