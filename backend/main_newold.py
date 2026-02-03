@@ -332,8 +332,6 @@ async def wishlist_generate(
             image=[io.BytesIO(raw_bytes)],
             prompt=prompt,
             size="1024x1024",
-            output_format="png",
-            input_fidelity="high",
         )
 
         if not result.data or not getattr(result.data[0], "b64_json", None):
