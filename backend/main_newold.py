@@ -307,6 +307,7 @@ def onboarded_status_or_complete(
 # =====================
 
 @app.post("/api/wishlist/generate", response_model=WishlistGenerateResponse)
+@app.post("/wishlist/generate", response_model=WishlistGenerateResponse)  # альтернативный путь (если прокси обрезает /api)
 async def wishlist_generate(
     prompt: str = Form(...),
     image: UploadFile = File(...),
