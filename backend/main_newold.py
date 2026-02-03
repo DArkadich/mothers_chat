@@ -327,9 +327,16 @@ async def wishlist_generate(
         if not raw_bytes:
             raise HTTPException(status_code=400, detail="Пустой файл изображения")
 
+        content_type = (image.content_type or "").strip().lower()
+        if content_type not in ("image/jpeg", "image/png", "image/webp"):
+            content_type = "image/jpeg"
+        filename = image.filename or "image.jpg"
+        if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            filename = "image.jpg"
+
         result = openai_images_client.images.edit(
             model="gpt-image-1",
-            image=io.BytesIO(raw_bytes),
+            image=(filename, io.BytesIO(raw_bytes), content_type),
             prompt=prompt,
             size="1024x1024",
         )
